@@ -4,6 +4,7 @@ import csv
 import random
 import os
 import sys
+import hashlib
 
 from curses import KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN, textpad
 
@@ -120,9 +121,131 @@ class dobleBloques():
                 print(cad,end=" ")
                 temp=temp.siguiente
 
-listaDobleBloques= dobleBloques()
+""" ------------------------------------------------------------ ARBOL AVL -------------------------------------------------------------------"""
+class nodoArbolAVL():
+    def __init__(self,nombre, carnet):
+        self.hijoIzq=None
+        self.hijoDer=None
+        self.nombre=nombre
+        self.carnet=carnet
+        #self.altura=altura
+        self.fe=0
 
-""" -----------------------------------------------------PARA EL MENU PRINCIPAL ----------------------------------------------------------------"""
+class miArbolAVL():
+    root=None
+    def _init_(self):
+        self.root=None
+
+    def obtenerRaiz(self):
+        return self.root
+
+    def buscarEnAVL(self, valor, nodoAVL):
+        if self.root==None:
+            return None
+        elif nodoAVL.carnet==valor:
+            return nodoAVL
+        elif nodoAVL.carnet<valor:
+            return buscarEnAVL(valor,nodoAVL.hijoDer)
+        elif nodoAVL.carnet>valor:
+            return buscarEnAVL(valor,nodoAVL.hijoIzq)
+
+    def obtenerFE(self, arbolX):
+        if arbolX==None:
+            return -1
+        else:
+            return arbolX.fe
+
+    def rotacionSimpleIzquierda(self, arbolC):
+        auxiliar=arbolC.hijoIzq
+        arbolC.hijoIzq=auxiliar.hijoDer
+        auxiliar.hijoDer=arbolC
+        arbolC.fe=max(self.obtenerFE(arbolC.hijoIzq),self.obtenerFE(arbolC.hijoDer))+1
+        auxiliar.fe==max(self.obtenerFE(auxiliar.hijoIzq),self.obtenerFE(auxiliar.hijoDer))+1
+        return auxiliar
+
+    def rotacionSimpleDerecha(self, arbolC):
+        auxiliar=arbolC.hijoDer
+        arbolC.hijoDer=auxiliar.hijoIzq
+        auxiliar.hijoIzq=arbolC
+        arbolC.fe=max(self.obtenerFE(arbolC.hijoIzq),self.obtenerFE(arbolC.hijoDer))+1
+        auxiliar.fe==max(self.obtenerFE(auxiliar.hijoIzq),self.obtenerFE(auxiliar.hijoDer))+1
+        return auxiliar
+
+    def rotacionDobleIzquierda(self, arbolC):
+        arbolC.hijoIzq=self.rotacionSimpleDerecha(arbolC.hijoIzq)
+        temporal=self.rotacionSimpleIzquierda(arbolC)
+        return temporal
+
+    def rotacionDobleDerecha(self, arbolC):
+        arbolC.hijoDer=self.rotacionSimpleIzquierda(arbolC.hijoDer)
+        temporal=self.rotacionSimpleDerecha(arbolC)
+        return temporal
+
+    def insertarAVL(self, nuevo, subArb):
+        nuevoPadre=subArb
+        if nuevo.carnet<subArb.carnet:
+            if subArb.hijoIzq==None:
+                subArb.hijoIzq=nuevo
+            else:
+                subArb.hijoIzq=self.insertarAVL(nuevo,subArb.hijoIzq)
+                if (self.obtenerFE(subArb.hijoIzq)-self.obtenerFE(subArb.hijoDer)==2):
+                    if nuevo.carnet<subArb.hijoIzq.carnet:
+                        nuevoPadre=self.rotacionSimpleIzquierda(subArb)
+                    else:
+                        nuevoPadre=self.rotacionDobleIzquierda(subArb)            
+        elif nuevo.carnet>subArb.carnet:
+            if subArb.hijoDer==None:
+                subArb.hijoDer=nuevo
+            else:
+                subArb.hijoDer=self.insertarAVL(nuevo,subArb.hijoDer)
+                if ((self.obtenerFE(subArb.hijoDer)-self.obtenerFE(subArb.hijoIzq)==2)):
+                    if nuevo.carnet>subArb.hijoDer.carnet:
+                        nuevoPadre=self.rotacionSimpleDerecha(subArb)
+                    else:
+                        nuevoPadre=self.rotacionDobleDerecha(subArb)   
+        else:
+            print("Nodo Duplicado")
+
+        #actualizando altura
+        if subArb.hijoIzq==None and subArb.hijoDer!=None:
+            subArb.fe=subArb.hijoDer.fe+1
+        elif subArb.hijoDer==None and subArb.hijoIzq!=None:
+            subArb.fe=subArb.hijoIzq.fe+1
+        else:
+            subArb.fe=max(self.obtenerFE(subArb.hijoIzq), self.obtenerFE(subArb.hijoDer))+1
+
+        return nuevoPadre
+
+    def insertar(self, nom, carne):
+        nuevo=nodoArbolAVL(nom,carne)
+        if self.root is None:
+            self.root=nuevo
+        else:
+            self.root=self.insertarAVL(nuevo,self.root)
+
+    def recorridoPreOrden(self, arbolR):
+        if arbolR!=None:
+            print(arbolR.carnet,end=" ")
+            self.recorridoPreOrden(arbolR.hijoIzq)
+            self.recorridoPreOrden(arbolR.hijoDer)
+
+    def recorridoPosOrden(self, arbolR):
+        if arbolR!=None:            
+            self.recorridoPosOrden(arbolR.hijoIzq)
+            self.recorridoPosOrden(arbolR.hijoDer)
+            print(arbolR.carnet,end=" ")
+
+    def recorridoInOrden(self, arbolR):
+        if arbolR!=None:            
+            self.recorridoInOrden(arbolR.hijoIzq)
+            print(arbolR.carnet,end=" ")
+            self.recorridoInOrden(arbolR.hijoDer)
+
+""" ------------------------------------------------------------ OBJETOS ---------------------------------------------------------------------"""
+listaDobleBloques= dobleBloques()
+classMetArbol=miArbolAVL()
+
+""" ----------------------------------------------------PARA EL MENU PRINCIPAL ---------------------------------------------------------------"""
 def print_menu(stdscr, selected_row_idx):
     h, w= stdscr.getmaxyx()
         
@@ -208,6 +331,53 @@ def menu_principal(stdscr):
         print_menu(stdscr,indice_fila_actual)
         stdscr.refresh()
 
+""" ------------------------------------------------------PARA MOSTRAR BLOQUES --------------------------------------------------------------"""
+'''
+def menu_bloques(stdscr): #INICIA LAS PROPIEDADES BASICAS
+    curses.curs_set(0) # SETEA EL CURSOR EN LA POSICION 0
+    index = 0
+    pintar_menu(stdscr, 0) # VA A INICAR EN EL INDICE 0
+    while True:
+        tecla = stdscr.getch() # OBTENEMOS EL CARACTER DEL TECLADO
+        if(tecla == curses.KEY_RIGHT): # VERIFICAMOS SI EL FLECHA A LA DERECHA
+            index = index + 1
+        elif (tecla == curses.KEY_LEFT ): # VERIFICAMOS SI ES FLECHA A LA IZQUIERDA
+            index = index - 1
+        elif (tecla == 27): # SI ES LA TECLA DE SCAPE.... 
+            stdscr.clear()
+            stdscr.refresh()
+            curses.wrapper(menu_principal)
+        elif (tecla==curses.KEY_ENTER) or tecla in [10,13]:
+            nombreUsuarioActual[0]=listaDobleCircularUsuarios.obtenerNombre(index)
+        if( index < 0): # EN CASO DE QUE EL INDICE SE VUELVA NEGAVITO LO DEJAMOS EN 0
+            index = listaDobleCircularUsuarios.tamanio()-1
+        if( index >= listaDobleCircularUsuarios.tamanio()): # EN CASO QUE EL INDICE SE VUELVA MAYOR AL SIZE DEL ARREGLO...
+            index = 0 # ... LO LIMITAMOS AL ULTIMO INDICE VALIDO
+        pintar_menu(stdscr, index) # MANDAMOS A REPINTAR LA PANTALLA
+
+def pinter_ventana(stdscr):
+    # -----------------------------------------------------------
+    # PINTAMOS EL MARCO DEL MENU
+    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE) # COLOR DEL MARCO
+    stdscr.attron(curses.color_pair(1)) # PERMITE HABILITAR UN ATRIBUTO ESPECIFICO
+    stdscr.box("|", "-") ## PINTA EL MARCO
+    stdscr.attroff(curses.color_pair(1)) # DESHABILITA EL ATRIBUTO ESPECIICO
+    stdscr.refresh()
+    # -----------------------------------------------------------
+
+def pintar_menu(stdsrc, index):
+    # -----------------------------------------------------------
+    stdsrc.clear() # LIMPIA LA CONSOLA
+    pinter_ventana(stdsrc) # MANDA A PINTAR EL MARCO
+    altura, ancho = stdsrc.getmaxyx() # OBTIENE LA ALTURA Y ANCHO DE LA PANTALLA
+    curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLUE) # COLOR DE LAS OPCIONES, INIICIALIZA UNA PAREJA DE COLORES EL COLOR DE LETRA Y COLOR DE FONDO RESPECTIVAMENTE
+    y = int(altura/2) 
+    x = int((ancho/2)-(len(listaDobleCircularUsuarios.obtenerNombre(index))/2))
+    stdsrc.addstr(y,x, listaDobleCircularUsuarios.obtenerNombre(index), curses.color_pair(2)) # HAGREGA UNA CADENA  LA PANTALLA EN COORDENADAS Y, X Y UN ATRIBUTO EN ESTE CASO ES LA PAREJA DE COLORES
+    stdsrc.refresh()
+'''
+
+""" -----------------------------------------------LECTURA ARCHIVO E INGRESO DE DATOS -------------------------------------------------------"""
 
 def archivoBloque(ruta): 
     
@@ -240,6 +410,21 @@ def archivoBloque(ruta):
         hora=time.strftime("%H:%M:%S")
         fechayhora=fecha+"-::"+hora
         listaDobleBloques.insertarFinal(str(obidx), fechayhora, clasee, dataa, hashant, "gudiel")
+
+
+classMetArbol.insertar("a",10)
+classMetArbol.insertar("a",5)
+classMetArbol.insertar("a",13)
+classMetArbol.insertar("a",1)
+classMetArbol.insertar("a",6)
+classMetArbol.insertar("a",17)
+classMetArbol.insertar("a",16)
+classMetArbol.recorridoPreOrden(classMetArbol.obtenerRaiz())
+
+hashsha = hashlib.sha256()
+stexto="hola Altaruru, hoy es lunes 1 de Octubre de 2018"
+hashsha.update(stexto.encode())
+print (hashsha.hexdigest())
 
             
 curses.wrapper(menu_principal)
