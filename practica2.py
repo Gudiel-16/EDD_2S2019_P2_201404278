@@ -133,8 +133,11 @@ class nodoArbolAVL():
 
 class miArbolAVL():
     root=None
+    cadenaG=""
     def _init_(self):
         self.root=None
+        self.cadenaG=""
+
 
     def obtenerRaiz(self):
         return self.root
@@ -240,10 +243,174 @@ class miArbolAVL():
             self.recorridoInOrden(arbolR.hijoIzq)
             print(arbolR.carnet,end=" ")
             self.recorridoInOrden(arbolR.hijoDer)
+    
+    def reporteGraphvizArbol(self, arbolR):
+        if arbolR==None:
+            return
+        else:
+            if arbolR.hijoIzq!=None:
+                self.cadenaG+="\"" + str(arbolR.carnet) + "\" -> \"" + str(arbolR.hijoIzq.carnet) + "\" \n"
+            else:
+                self.cadenaG+="\"" + str(arbolR.carnet) + "\" -> \"" + str(arbolR.carnet) + " NULL IZQ \" \n"
+            if arbolR.hijoDer!=None:
+                self.cadenaG+="\"" + str(arbolR.carnet) + "\" -> \"" + str(arbolR.hijoDer.carnet) + "\" \n"
+            else:
+                self.cadenaG+="\"" + str(arbolR.carnet) + "\" -> \"" + str(arbolR.carnet) + " NULL DER \" \n"
+        self.reporteGraphvizArbol(arbolR.hijoDer)
+        self.reporteGraphvizArbol(arbolR.hijoIzq)
+
+    def generarImagenGraphiz(self):
+        # open(nombre_archivo.ext, formato)
+        f = open("arbol.dot", "w") 
+        # write("texto a escribir") 
+        
+        f.write("digraph G {\n")
+        f.write("node [shape=record,width=.1,height=.1];")
+        
+        a=self.cadenaG
+        f.write(a)
+
+        f.write("}")
+        # CIERRA EL ARCHIVO
+        f.close()
+        # dot -Tjpg ruta_archivo_dot.dot -o nombre_archivo_salida.jpg
+        os.system("dot -Tjpg"+ " arbol.dot " +"-o arbol.jpg")
+        os.system("arbol.jpg")
+
+    def obtenerCadenaG(self):
+        return self.cadenaG
+
+    def limpiarCadenaG(self):
+        self.cadenaG=""
+    
+
+
+""" ------------------------------------------------------------ PARA CREAR ARBOL ---------------------------------------------------------------------"""
+class ingresarEnLista:
+
+    def __init__(self):
+        self.ingresar=""
+        self.ingresar2=""
+        self.guion=""
+        self.listArbol=[]
+        self.letrasNum=["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","0","1","2","3","4","5","6","7","8","9"]
+        self.simb=[",",":","{","}"]
+        self.recorrido=None
+
+    def ingreList(self,cadena):
+        for cad in cadena:
+            if cad!=" " and cad!="\n" and cad!="\"":
+                if cad =="-":
+                    self.listArbol.append(self.ingresar)
+                    self.listArbol.append("-")
+                    self.ingresar=""
+                elif cad in self.letrasNum[0:]:
+                    if self.ingresar2!="":
+                        self.listArbol.append(self.ingresar2)
+                        self.ingresar2="" 
+                    self.ingresar+=cad               
+                elif cad in self.simb[0:]:
+                    if self.ingresar!="":
+                        self.listArbol.append(self.ingresar)
+                        self.ingresar=""
+                    self.ingresar2+=cad
+        if self.ingresar!="":
+            self.listArbol.append(self.ingresar)
+        elif self.ingresar2!="":
+            self.listArbol.append(self.ingresar2)
+        self.ingresar=""
+        self.ingresar2=""
+        print(self.listArbol)
+        
+        miraizz=self.ingresarEnArbol()
+        return miraizz
+    
+    def ingresarEnArbol(self):
+        listLlaves=[]
+        listMov=[]
+        cont=0 #para saber el index de lista en que voy
+        contIzqoDer=0
+        oa=miArbolAVL()
+        miRaiz=oa.obtenerRaiz()
+
+        for ol in self.listArbol: #recorro la lista
+            for odcl in ol: #recorro cada caracter de elemento de lista
+                if odcl=="{":
+                    listLlaves.append("{")
+                elif odcl=="}":
+                    listLlaves.pop(0)
+                    if listMov.__len__()>0:
+                        listMov.pop(listMov.__len__()-1)
+            if ol=="}}," and listLlaves.count("{")==1: # cambiara de lado el arbol
+                listMov.clear()
+            elif ol=="value" and listLlaves.count("{")==1: #quiere decir que es la raiz
+                nom=self.listArbol[cont+2]
+                carn=self.listArbol[cont+4]
+                miRaiz=self.ingresarRaiz(nom,carn,miRaiz)
+            elif ol=="value" and listLlaves.count("{")>1: #recorrera hacia izq
+                nom=self.listArbol[cont+2]
+                carn=self.listArbol[cont+4]
+                ###
+                nuevo=nodoArbolAVL(nom,carn)
+                self.recorrido=miRaiz
+                contt=1
+                print(listMov)
+                for rec in listMov:
+                    if contt==listMov.__len__(): #validar que sea el ultimo elemento de la lista
+                        if listMov[listMov.__len__()-1]=="left":
+                            self.recorrido.hijoIzq=nuevo
+                        elif listMov[listMov.__len__()-1]=="right":
+                            self.recorrido.hijoDer=nuevo
+                    elif rec=="left":
+                        try:
+                            self.recorrido=self.recorrido.hijoIzq
+                        except:
+                            pass                                        
+                    elif rec=="right":
+                        try:
+                            self.recorrido=self.recorrido.hijoDer
+                        except:
+                            pass                        
+                    contt=contt+1
+                ###
+            elif ol=="left":
+                listMov.append("left")
+            elif ol=="right":
+                listMov.append("right")
+            elif ol=="null":
+                listMov.pop(listMov.__len__()-1)
+            
+            cont=cont+1
+        return miRaiz
+        
+    def ingresarEnArbolConListaHaciaIzquierda(self, nom, carne, listMovi, miArbol):
+        nuevo=nodoArbolAVL("a",3)
+        recorrido=miArbol
+        cont=1
+        for rec in listMovi:
+            if cont==listMovi.__len__(): #validar que sea el ultimo elemento de la lista
+                if listMovi[listMovi.__len__()-1]=="left":
+                    miArbol.hijoIzq=nuevo
+                    return miArbol
+                elif listMovi[listMovi.__len__()-1]=="right":
+                    miArbol.hijoDer=nuevo
+                    return miArbol
+            elif rec=="left":
+                recorrido=recorrido.hijoIzq                
+            elif rec=="right":
+                recorrido=recorrido.hijoDer
+            cont=cont+1
+
+    def ingresarRaiz(self, nom, carne, miArbol):
+        nuevo=nodoArbolAVL(nom,carne)
+        miArbol=nuevo
+        return miArbol
+
 
 """ ------------------------------------------------------------ OBJETOS ---------------------------------------------------------------------"""
 listaDobleBloques= dobleBloques()
 classMetArbol=miArbolAVL()
+classIngreLista=ingresarEnLista()
 
 """ ----------------------------------------------------PARA EL MENU PRINCIPAL ---------------------------------------------------------------"""
 def print_menu(stdscr, selected_row_idx):
@@ -306,20 +473,20 @@ def menu_principal(stdscr):
                         stdscr.addstr(2,2,"Ingrese nombre de archivo.csv y luego presione ENTER: ")
                         stdscr.addstr(4,2,format(a))
                     elif tecla==10:#enter   
-                        try:                   
-                            archivoBloque(str(a))
-                            stdscr.addstr(20,40,"USUARIOS CARGADOS CORRECTAMENTE!")
-                            stdscr.getch()
-                            stdscr.clear()
-                            stdscr.refresh()                            
-                            break
-                        except:
-                            stdscr.addstr(20,35,"EL NOMBRE DEL ARCHIVO NO SE ENCONTRO!")
-                            stdscr.refresh()
-                            stdscr.getch()
-                            stdscr.clear()
-                            stdscr.refresh() 
-                            break  
+                    #try:                   
+                        archivoBloque(str(a))
+                        stdscr.addstr(20,40,"USUARIOS CARGADOS CORRECTAMENTE!")
+                        stdscr.getch()
+                        stdscr.clear()
+                        stdscr.refresh()                            
+                        break
+                    '''except:
+                        stdscr.addstr(20,35,"EL NOMBRE DEL ARCHIVO NO SE ENCONTRO!")
+                        stdscr.refresh()
+                        stdscr.getch()
+                        stdscr.clear()
+                        stdscr.refresh() 
+                        break  '''
             elif indice_fila_actual==1:                               
                    return          
             elif indice_fila_actual==2:
@@ -386,19 +553,22 @@ def archivoBloque(ruta):
 
     with open(ruta) as f:
         reader=csv.reader(f)
-        contadorCD=0       
         #Obtenemos el nombre de clase, y la estructura data de archivo .csv
         for row in reader:
-            if contadorCD==0:
-                us="{0}".format(row[0]) #fila 0 de archivo .csv
+            us="{0}".format(row[0])
+            uss=str(us)
+            if uss=="class":
+                 #fila 0 de archivo .csv
                 clasee="{0}".format(row[1]) #fila 1 de archivo .csv
-            elif contadorCD==1:
-                us="{0}".format(row[0]) #fila 0 de archivo .csv
+            elif uss=="data":
+                #us="{0}".format(row[0]) #fila 0 de archivo .csv
                 dataa="{0}".format(row[1]) #fila 1 de archivo .csv
-            contadorCD=contadorCD+1
-    
+                arb=classIngreLista.ingreList(dataa)  
+                classMetArbol.reporteGraphvizArbol(arb)
+                classMetArbol.generarImagenGraphiz()              
+
     #verificar si es bloque genesis (bloque cabeza o el primero)
-    if listaDobleBloques.estaVacia():
+    '''if listaDobleBloques.estaVacia():
         fecha=time.strftime("%d-%m-%y") 
         hora=time.strftime("%H:%M:%S")
         fechayhora=fecha+"-::"+hora
@@ -409,9 +579,9 @@ def archivoBloque(ruta):
         fecha=time.strftime("%d-%m-%y")  
         hora=time.strftime("%H:%M:%S")
         fechayhora=fecha+"-::"+hora
-        listaDobleBloques.insertarFinal(str(obidx), fechayhora, clasee, dataa, hashant, "gudiel")
+        listaDobleBloques.insertarFinal(str(obidx), fechayhora, clasee, dataa, hashant, "gudiel")'''
 
-
+'''
 classMetArbol.insertar("a",10)
 classMetArbol.insertar("a",5)
 classMetArbol.insertar("a",13)
@@ -419,13 +589,29 @@ classMetArbol.insertar("a",1)
 classMetArbol.insertar("a",6)
 classMetArbol.insertar("a",17)
 classMetArbol.insertar("a",16)
+aja=classMetArbol.obtenerRaiz()
+aja=aja.hijoIzq
+aja=aja.hijoIzq
+aja.hijoIzq=nodoArbolAVL("s",3)
 classMetArbol.recorridoPreOrden(classMetArbol.obtenerRaiz())
-
+classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
+classMetArbol.generarImagenGraphiz()
+'''
+'''
 hashsha = hashlib.sha256()
 stexto="hola Altaruru, hoy es lunes 1 de Octubre de 2018"
 hashsha.update(stexto.encode())
 print (hashsha.hexdigest())
 
-            
+            '''
 curses.wrapper(menu_principal)
-            
+
+prueba=[]
+print(prueba)
+#prueba.pop(prueba.__len__()-1)
+print(prueba.__len__())
+
+
+
+
+    
