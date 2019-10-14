@@ -244,18 +244,38 @@ class miArbolAVL():
             print(arbolR.carnet,end=" ")
             self.recorridoInOrden(arbolR.hijoDer)
     
+    def obtenerAlturaNodo(self, arbolG):
+        mayor=0
+        tempo=0
+        if arbolG==None:
+            return 0
+        else:
+            tempo=self.obtenerAlturaNodo(arbolG.hijoIzq)
+            if tempo>mayor:
+                mayor=tempo
+            tempo=self.obtenerAlturaNodo(arbolG.hijoDer)
+            if tempo>mayor:
+                mayor=tempo
+            return mayor+1
+
     def reporteGraphvizArbol(self, arbolR):
         if arbolR==None:
             return
         else:
             if arbolR.hijoIzq!=None:
-                self.cadenaG+="\"" + str(arbolR.carnet) + "\" -> \"" + str(arbolR.hijoIzq.carnet) + "\" \n"
+                altura=self.obtenerAlturaNodo(arbolR)
+                alturaHI=self.obtenerAlturaNodo(arbolR.hijoIzq)
+                self.cadenaG+="\"Nombre: " + str(arbolR.nombre) + " \nCarnet: " + str(arbolR.carnet) + " \nFE: " + str(arbolR.fe) + " \nAltura: " + str(altura) + "\" -> \"Nombre: " + str(arbolR.hijoIzq.nombre) + " \nCarnet: " + str(arbolR.hijoIzq.carnet) + " \nFE: "+ str(arbolR.hijoIzq.fe) +" \nAltura: " + str(alturaHI) + "\" \n"
             else:
-                self.cadenaG+="\"" + str(arbolR.carnet) + "\" -> \"" + str(arbolR.carnet) + " NULL IZQ \" \n"
+                altura=self.obtenerAlturaNodo(arbolR)
+                self.cadenaG+="\"Nombre: " + str(arbolR.nombre) + " \nCarnet: " + str(arbolR.carnet) + " \nFE: " + str(arbolR.fe) + " \nAltura: " + str(altura) + "\" -> \"" + str(arbolR.carnet) + " NULL IZQ \" \n"
             if arbolR.hijoDer!=None:
-                self.cadenaG+="\"" + str(arbolR.carnet) + "\" -> \"" + str(arbolR.hijoDer.carnet) + "\" \n"
+                altura=self.obtenerAlturaNodo(arbolR)
+                alturaDE=self.obtenerAlturaNodo(arbolR.hijoDer)
+                self.cadenaG+="\"Nombre: " + str(arbolR.nombre) + " \nCarnet: " + str(arbolR.carnet) + " \nFE: " + str(arbolR.fe) + " \nAltura: " + str(altura) + "\" -> \"Nombre: " + str(arbolR.hijoDer.nombre) + " \nCarnet: " + str(arbolR.hijoDer.carnet) + " \nFE: "+ str(arbolR.hijoDer.fe) +" \nAltura: " + str(alturaDE) + "\" \n"
             else:
-                self.cadenaG+="\"" + str(arbolR.carnet) + "\" -> \"" + str(arbolR.carnet) + " NULL DER \" \n"
+                altura=self.obtenerAlturaNodo(arbolR)
+                self.cadenaG+="\"Nombre: " + str(arbolR.nombre) + " \nCarnet: " + str(arbolR.carnet) + " \nFE: " + str(arbolR.fe) + " \nAltura: " + str(altura) + "\" -> \"" + str(arbolR.carnet) + " NULL DER \" \n"
         self.reporteGraphvizArbol(arbolR.hijoDer)
         self.reporteGraphvizArbol(arbolR.hijoIzq)
 
@@ -334,27 +354,23 @@ class ingresarEnLista:
         miRaiz=oa.obtenerRaiz()
 
         for ol in self.listArbol: #recorro la lista
-            #print(ol)
             for odcl in ol: #recorro cada caracter de elemento de lista
                 if odcl=="{":
                     listLlaves.append("{")
                 elif odcl=="}":
                     listLlaves.pop(0)
                     if listMov.__len__()>0:
-                        print("x")
                         listMov.pop(listMov.__len__()-1)
             if ol=="value" and listLlaves.count("{")==1: #quiere decir que es la raiz
-                nom=self.listArbol[cont+2]
-                carn=self.listArbol[cont+4]
+                carn=self.listArbol[cont+2]
+                nom=self.listArbol[cont+4]                
                 miRaiz=self.ingresarRaiz(nom,carn,miRaiz)
-            elif ol=="value" and listLlaves.count("{")>1: #recorrera hacia izq
-                nom=self.listArbol[cont+2]
-                carn=self.listArbol[cont+4]
-                ###
+            elif ol=="value" and listLlaves.count("{")>1: #recorrera 
+                carn=self.listArbol[cont+2]
+                nom=self.listArbol[cont+4]                
                 nuevo=nodoArbolAVL(nom,carn)
                 self.recorrido=miRaiz
                 contt=1
-                print(listMov)
                 for rec in listMov:
                     if contt==listMov.__len__(): #validar que sea el ultimo elemento de la lista
                         if listMov[listMov.__len__()-1]=="left":
@@ -372,7 +388,6 @@ class ingresarEnLista:
                         except:
                             pass                        
                     contt=contt+1
-                ###
             elif ol=="left":
                 listMov.append("left")
             elif ol=="right":
@@ -382,25 +397,7 @@ class ingresarEnLista:
             
             cont=cont+1
         return miRaiz
-        
-    def ingresarEnArbolConListaHaciaIzquierda(self, nom, carne, listMovi, miArbol):
-        nuevo=nodoArbolAVL("a",3)
-        recorrido=miArbol
-        cont=1
-        for rec in listMovi:
-            if cont==listMovi.__len__(): #validar que sea el ultimo elemento de la lista
-                if listMovi[listMovi.__len__()-1]=="left":
-                    miArbol.hijoIzq=nuevo
-                    return miArbol
-                elif listMovi[listMovi.__len__()-1]=="right":
-                    miArbol.hijoDer=nuevo
-                    return miArbol
-            elif rec=="left":
-                recorrido=recorrido.hijoIzq                
-            elif rec=="right":
-                recorrido=recorrido.hijoDer
-            cont=cont+1
-
+    
     def ingresarRaiz(self, nom, carne, miArbol):
         nuevo=nodoArbolAVL(nom,carne)
         miArbol=nuevo
@@ -565,7 +562,13 @@ def archivoBloque(ruta):
                 dataa="{0}".format(row[1]) #fila 1 de archivo .csv
                 arb=classIngreLista.ingreList(dataa)  
                 classMetArbol.reporteGraphvizArbol(arb)
-                classMetArbol.generarImagenGraphiz()              
+                classMetArbol.generarImagenGraphiz() 
+                print("\ninorder\n") 
+                classMetArbol.recorridoInOrden(arb)
+                print("\nposorder\n")
+                classMetArbol.recorridoPosOrden(arb)
+                print("\npreorder\n")
+                classMetArbol.recorridoPreOrden(arb)            
 
     #verificar si es bloque genesis (bloque cabeza o el primero)
     '''if listaDobleBloques.estaVacia():
@@ -587,12 +590,12 @@ classMetArbol.insertar("a",5)
 classMetArbol.insertar("a",13)
 classMetArbol.insertar("a",1)
 classMetArbol.insertar("a",6)
-classMetArbol.insertar("a",17)
-classMetArbol.insertar("a",16)
-aja=classMetArbol.obtenerRaiz()
-aja=aja.hijoIzq
-aja=aja.hijoIzq
-aja.hijoIzq=nodoArbolAVL("s",3)
+classMetArbol.insertar("a",11)
+#classMetArbol.insertar("a",16)
+#aja=classMetArbol.obtenerRaiz()
+#aja=aja.hijoIzq
+#aja=aja.hijoIzq
+#aja.hijoIzq=nodoArbolAVL("s",3)
 classMetArbol.recorridoPreOrden(classMetArbol.obtenerRaiz())
 classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
 classMetArbol.generarImagenGraphiz()
