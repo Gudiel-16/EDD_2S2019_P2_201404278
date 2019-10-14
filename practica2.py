@@ -334,16 +334,16 @@ class ingresarEnLista:
         miRaiz=oa.obtenerRaiz()
 
         for ol in self.listArbol: #recorro la lista
+            #print(ol)
             for odcl in ol: #recorro cada caracter de elemento de lista
                 if odcl=="{":
                     listLlaves.append("{")
                 elif odcl=="}":
                     listLlaves.pop(0)
                     if listMov.__len__()>0:
+                        print("x")
                         listMov.pop(listMov.__len__()-1)
-            if ol=="}}," and listLlaves.count("{")==1: # cambiara de lado el arbol
-                listMov.clear()
-            elif ol=="value" and listLlaves.count("{")==1: #quiere decir que es la raiz
+            if ol=="value" and listLlaves.count("{")==1: #quiere decir que es la raiz
                 nom=self.listArbol[cont+2]
                 carn=self.listArbol[cont+4]
                 miRaiz=self.ingresarRaiz(nom,carn,miRaiz)
