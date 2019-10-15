@@ -5,6 +5,7 @@ import random
 import os
 import sys
 import hashlib
+import json
 
 from curses import KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN, textpad
 
@@ -22,6 +23,7 @@ class nodoDobleBloques():
         self.dato=dato
         self.hashant=hashant
         self.hashh=hashh
+        self.cadenaG=""
 
 class dobleBloques():
     def __init__(self):
@@ -61,6 +63,9 @@ class dobleBloques():
         self.ultimo=None
         self.size=0
     
+    def tamanio(self):
+        return self.size
+
     def obtenerHashAnt(self):
         if self.estaVacia():
             print("lista Vacia")
@@ -79,37 +84,52 @@ class dobleBloques():
                 temp=temp.siguiente
             return temp.index
 
-    def reporte(self):
-        contador=1  
-        contador2=1      
-        cadena='nullInicio[label = "null"];\n' 
-        cadena2=""     
-        temp=self.primero
-        for i in range(self.size):
-            cadenaNodo='node'+str(contador)+'[label = "{ <a> |'+str(temp.coordenadas)+' | }  "];\n'
-            cadena+=cadenaNodo
-            contador=contador+1
-            temp=temp.siguiente
-        cadena+='nullFinal[label = " null"];\n'
+    def getDataDeNodo(self, indexx):
+        actual=self.primero
+        for i in range(indexx):
+            actual=actual.siguiente
+        return actual.dato
 
-        for j in range(self.size):
-            if contador2==1:
-                cadena2+='node'+str(contador2)+':a -> nullInicio; \n'
-                sig=contador2+1
-                cadena2+='node'+str(contador2)+' -> node'+str(sig)+';\n'
-            elif contador2==self.size:
-                ant=contador2-1
-                cadena2+='node'+str(contador2)+' -> nullFinal' + ';\n'
-                cadena2+='node'+str(contador2)+' -> node'+str(ant) +';\n'
-            else:
-                ant=contador2-1
-                sig=contador2+1
-                cadena2+='node'+str(contador2)+' -> node'+str(sig)+';\n'
-                cadena2+='node'+str(contador2)+' -> node'+str(ant)+';\n'
-            contador2=contador2+1
-        cadena+=cadena2
-        return cadena       
+    def obtenerCadenaParaCarrusel(self, indexx):
+        actual=self.primero
+        for i in range(indexx):
+            actual=actual.siguiente
+        cadret="INDEX: "+str(actual.index)+"\n"
+        cadret+="TIMESTAMP: " + str(actual.hora) + "\n"
+        cadret+="CLASS: " + str(actual.clase) + "\n"
+        cadret+="DATA: " + str(actual.dato[0:250]) + ",\n"
+        cadret+="PREVIOUSHASH: " + str(actual.hashant) + "\n"
+        cadret+="HASH: " + str(actual.hashh)
+        return cadret
+
+    def reporteBloques(self):
+        actual=self.primero
+        while actual.siguiente is not None:
+            self.cadenaG+="\"Class= " + actual.clase + "\nTimeStamp= " + actual.hora + "\nPHASH= " + actual.hashant + "\n HASH= " + actual.hashh + "\""
+            self.cadenaG+=" -> " + "\"Class= " + actual.siguiente.clase + "\nTimeStamp= " + actual.siguiente.hora + "\nPHASH= " + actual.siguiente.hashant + "\n HASH= " + actual.siguiente.hashh + "\" [dir=both];"
+            actual=actual.siguiente     
     
+    def generarImagenGraphiz(self):
+        # open(nombre_archivo.ext, formato)
+        f = open("ReportBlockChain.dot", "w") 
+        # write("texto a escribir") 
+        
+        f.write("digraph G {\n")
+        f.write("node [shape=record,width=.1,height=.1];")
+        
+        a=self.cadenaG
+        f.write(a)
+
+        f.write("}")
+        # CIERRA EL ARCHIVO
+        f.close()
+        # dot -Tjpg ruta_archivo_dot.dot -o nombre_archivo_salida.jpg
+        os.system("dot -Tjpg"+ " ReportBlockChain.dot " +"-o ReportBlockChain.jpg")
+        os.system("ReportBlockChain.jpg")
+
+    def limpiarCadenaG(self):
+        self.cadenaG=""
+
     def imprimirLista(self):
     
         if self.estaVacia():
@@ -134,13 +154,17 @@ class nodoArbolAVL():
 class miArbolAVL():
     root=None
     cadenaG=""
+    preport=[]
     def _init_(self):
         self.root=None
-        self.cadenaG=""  
-
+        self.cadenaG="" 
+        self.preport=[] 
 
     def obtenerRaiz(self):
         return self.root
+
+    def setRaiz(self, arbolG):
+        self.root=arbolG
 
     def buscarEnAVL(self, valor, nodoAVL):
         if self.root==None:
@@ -264,6 +288,19 @@ class miArbolAVL():
                 mayor=tempo
             return mayor+1
 
+    def obtenerFactorEquilibrio(self, arbolG):
+        if arbolG.hijoIzq is None and arbolG.hijoDer is None:
+            return 0
+        elif arbolG.hijoIzq is None and arbolG.hijoDer is not None:
+            return 1
+        elif arbolG.hijoIzq is not None and arbolG.hijoDer is None:
+            return -1
+        elif arbolG.hijoIzq is not None and arbolG.hijoDer is not None:
+            althi=self.obtenerAlturaNodo(arbolG.hijoIzq)
+            althd=self.obtenerAlturaNodo(arbolG.hijoDer)
+            op=althd-althi
+            return op
+
     def reporteGraphvizArbol(self, arbolR):
         if arbolR==None:
             return
@@ -271,19 +308,55 @@ class miArbolAVL():
             if arbolR.hijoIzq!=None:
                 altura=self.obtenerAlturaNodo(arbolR)
                 alturaHI=self.obtenerAlturaNodo(arbolR.hijoIzq)
-                self.cadenaG+="\"Nombre: " + str(arbolR.nombre) + " \nCarnet: " + str(arbolR.carnet) + " \nFE: " + str(arbolR.fe) + " \nAltura: " + str(altura) + "\" -> \"Nombre: " + str(arbolR.hijoIzq.nombre) + " \nCarnet: " + str(arbolR.hijoIzq.carnet) + " \nFE: "+ str(arbolR.hijoIzq.fe) +" \nAltura: " + str(alturaHI) + "\" \n"
+                facte=self.obtenerFactorEquilibrio(arbolR)
+                facte2=self.obtenerFactorEquilibrio(arbolR.hijoIzq)
+                self.cadenaG+="\"Nombre: " + str(arbolR.nombre) + " \nCarnet: " + str(arbolR.carnet) + " \nFE: " + str(facte) + " \nAltura: " + str(altura) + "\" -> \"Nombre: " + str(arbolR.hijoIzq.nombre) + " \nCarnet: " + str(arbolR.hijoIzq.carnet) + " \nFE: "+ str(facte2) +" \nAltura: " + str(alturaHI) + "\" \n"
             else:
                 altura=self.obtenerAlturaNodo(arbolR)
-                self.cadenaG+="\"Nombre: " + str(arbolR.nombre) + " \nCarnet: " + str(arbolR.carnet) + " \nFE: " + str(arbolR.fe) + " \nAltura: " + str(altura) + "\" -> \"" + str(arbolR.carnet) + " NULL IZQ \" \n"
+                facte=self.obtenerFactorEquilibrio(arbolR)
+                self.cadenaG+="\"Nombre: " + str(arbolR.nombre) + " \nCarnet: " + str(arbolR.carnet) + " \nFE: " + str(facte) + " \nAltura: " + str(altura) + "\" -> \"" + str(arbolR.carnet) + " NULL IZQ \" \n"
             if arbolR.hijoDer!=None:
                 altura=self.obtenerAlturaNodo(arbolR)
                 alturaDE=self.obtenerAlturaNodo(arbolR.hijoDer)
-                self.cadenaG+="\"Nombre: " + str(arbolR.nombre) + " \nCarnet: " + str(arbolR.carnet) + " \nFE: " + str(arbolR.fe) + " \nAltura: " + str(altura) + "\" -> \"Nombre: " + str(arbolR.hijoDer.nombre) + " \nCarnet: " + str(arbolR.hijoDer.carnet) + " \nFE: "+ str(arbolR.hijoDer.fe) +" \nAltura: " + str(alturaDE) + "\" \n"
+                facte=self.obtenerFactorEquilibrio(arbolR)
+                facte2=self.obtenerFactorEquilibrio(arbolR.hijoDer)
+                self.cadenaG+="\"Nombre: " + str(arbolR.nombre) + " \nCarnet: " + str(arbolR.carnet) + " \nFE: " + str(facte) + " \nAltura: " + str(altura) + "\" -> \"Nombre: " + str(arbolR.hijoDer.nombre) + " \nCarnet: " + str(arbolR.hijoDer.carnet) + " \nFE: "+ str(facte2) +" \nAltura: " + str(alturaDE) + "\" \n"
             else:
                 altura=self.obtenerAlturaNodo(arbolR)
-                self.cadenaG+="\"Nombre: " + str(arbolR.nombre) + " \nCarnet: " + str(arbolR.carnet) + " \nFE: " + str(arbolR.fe) + " \nAltura: " + str(altura) + "\" -> \"" + str(arbolR.carnet) + " NULL DER \" \n"
+                facte=self.obtenerFactorEquilibrio(arbolR)
+                self.cadenaG+="\"Nombre: " + str(arbolR.nombre) + " \nCarnet: " + str(arbolR.carnet) + " \nFE: " + str(facte) + " \nAltura: " + str(altura) + "\" -> \"" + str(arbolR.carnet) + " NULL DER \" \n"
         self.reporteGraphvizArbol(arbolR.hijoDer)
         self.reporteGraphvizArbol(arbolR.hijoIzq)
+
+    def reporteRecorridoPreOrden(self, arbolR):
+        if arbolR!=None:
+            cadin="\"Carnet: " + str(arbolR.carnet) + "\nNombre: " + str(arbolR.nombre) + "\""
+            self.preport.append(cadin)
+            self.reporteRecorridoPreOrden(arbolR.hijoIzq)
+            self.reporteRecorridoPreOrden(arbolR.hijoDer)
+
+    def reporteRecorridoPosOrden(self, arbolR):
+        if arbolR!=None:            
+            self.reporteRecorridoPosOrden(arbolR.hijoIzq)
+            self.reporteRecorridoPosOrden(arbolR.hijoDer)
+            cadin="\"" + str(arbolR.carnet) + "\nNombre: " + str(arbolR.nombre) + "\""
+            self.preport.append(cadin)
+
+    def reporteRecorridoInOrden(self, arbolR):
+        if arbolR!=None:            
+            self.reporteRecorridoInOrden(arbolR.hijoIzq)
+            cadin="\"" + str(arbolR.carnet) + "\nNombre: " + str(arbolR.nombre) + "\""
+            self.preport.append(cadin)
+            self.reporteRecorridoInOrden(arbolR.hijoDer)
+
+    def generarCadenaRecorrido(self):
+        cont=1
+        for ml in self.preport:
+            if cont == self.preport.__len__():
+                break
+            else:                
+                self.cadenaG+=ml + " -> " + self.preport[cont]
+            cont=cont+1
 
     def generarImagenGraphiz(self):
         # open(nombre_archivo.ext, formato)
@@ -306,11 +379,15 @@ class miArbolAVL():
     def limpiarCadenaG(self):
         self.cadenaG=""
 
+    def getlListRecorrido(self):
+        return self.preport
+
+    def limpiarListRecorrido(self):
+        self.preport=[]
+
     def limpiarRaiz(self):
         self.root=None
     
-
-
 """ ------------------------------------------------------------ PARA CREAR ARBOL ---------------------------------------------------------------------"""
 class ingresarEnLista:
 
@@ -346,7 +423,6 @@ class ingresarEnLista:
             self.listArbol.append(self.ingresar2)
         self.ingresar=""
         self.ingresar2=""
-        print(self.listArbol)
         
         miraizz=self.ingresarEnArbolBinario()
         return miraizz
@@ -408,12 +484,34 @@ class ingresarEnLista:
         nuevo=nodoArbolAVL(nom,carne)
         miArbol=nuevo
         return miArbol
-     
-
+   
 """ ------------------------------------------------------------ OBJETOS ---------------------------------------------------------------------"""
 listaDobleBloques= dobleBloques()
 classMetArbol=miArbolAVL()
 classIngreLista=ingresarEnLista()
+
+def generarHash(cadenah):
+    hash = hashlib.sha256()
+    stexto=cadenah
+    hash.update(stexto.encode())
+    return hash.hexdigest()
+
+def generarCadenaJSON(indexj, fechaj, classj, dataj, prevhash, hashj):
+    
+    cadgen="{\n"
+    cadgen+="\"INDEX\": " + str(indexj) + ",\n"
+    cadgen+="\"TIMESTAMP\": \"" + str(fechaj) + "\",\n"
+    cadgen+="\"CLASS\": \"" + str(classj) + "\",\n"
+    cadgen+="\"DATA\": " + str(dataj) + ",\n"
+    cadgen+="\"PREVIOUSHASH\": \"" + str(prevhash) + "\",\n"
+    cadgen+="\"HASH\": \"" + str(hashj) + "\"\n"
+    cadgen+="}"
+
+    f = open("archijson.json", "w") 
+    f.write(cadgen)
+    f.close()
+
+
 
 """ ----------------------------------------------------PARA EL MENU PRINCIPAL ---------------------------------------------------------------"""
 def print_menu(stdscr, selected_row_idx):
@@ -478,7 +576,7 @@ def menu_principal(stdscr):
                     elif tecla==10:#enter   
                     #try:                   
                         archivoBloque(str(a))
-                        stdscr.addstr(20,40,"USUARIOS CARGADOS CORRECTAMENTE!")
+                        stdscr.addstr(20,40,"BLOQUE CARGADO CORRECTAMENTE!")
                         stdscr.getch()
                         stdscr.clear()
                         stdscr.refresh()                            
@@ -490,10 +588,76 @@ def menu_principal(stdscr):
                         stdscr.clear()
                         stdscr.refresh() 
                         break  '''
-            elif indice_fila_actual==1:                               
-                   return          
+            elif indice_fila_actual==1:   
+                if listaDobleBloques.estaVacia():
+                    stdscr.addstr(11,32,"NO HAY BLOQUES!")
+                    stdscr.getch()  
+                    stdscr.clear()
+                    stdscr.refresh() 
+                else:    
+                   curses.wrapper(menu_bloques)          
             elif indice_fila_actual==2:
-                return                                  
+                a=""
+                stdscr.addstr(2,0,"REPORTES: \n\n1. BlockChain \n2. Visualizar Arbol \n3. Mostrar Recorrido PreOrden \n4. Mostrar Recorrido PosOrden \n5. Mostrar Recorrido InOrden \n6. Mostrar Recorrido PreOrden (Consola) \n7. Mostrar Recorrido PosOrden (Consola) \n8. Mostrar Recorrido InOrden (Consola) \n\n ")
+                while True:
+                    tecla = stdscr.getch()                    
+                    if tecla>48 and tecla <58:#numeros
+                        a+=chr(tecla)
+                        stdscr.addstr(14,2,format(a))
+                    elif tecla>64 and tecla<91:#letras mayusculas
+                        a+=chr(tecla)
+                        stdscr.addstr(14,2,format(a))
+                    elif tecla>96 and tecla <123:#letras minusculas
+                        a+=chr(tecla)
+                        stdscr.addstr(14,2,format(a))
+                    elif tecla==46:#punto
+                        a+=chr(tecla)
+                        stdscr.addstr(14,2,format(a))
+                    elif tecla==8:#borrar
+                        temp=len(a)
+                        a=a[:temp-1]
+                        stdscr.addstr(14,2,format(a))
+                    elif tecla==10:#enter                                                
+                        if a=="1":
+                            listaDobleBloques.limpiarCadenaG()
+                            listaDobleBloques.reporteBloques()
+                            listaDobleBloques.generarImagenGraphiz()
+                            stdscr.clear()
+                            stdscr.refresh()
+                            break
+                        elif a=="2":
+                            classMetArbol.limpiarCadenaG()
+                            classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
+                            classMetArbol.generarImagenGraphiz()
+                            stdscr.clear()
+                            stdscr.refresh()
+                            break
+                        elif a=="3":
+                            classMetArbol.limpiarListRecorrido()
+                            classMetArbol.limpiarCadenaG()
+                            classMetArbol.reporteRecorridoPreOrden(classMetArbol.obtenerRaiz())
+                            classMetArbol.generarCadenaRecorrido()
+                            classMetArbol.generarImagenGraphiz()
+                            stdscr.clear()
+                            stdscr.refresh()                            
+                            break
+                        elif a=="4":
+                            break
+                        elif a=="5":
+                            break
+                        elif a=="6":
+                            break
+                        elif a=="7":
+                            break 
+                        elif a=="8":
+                            break  
+                        else:
+                            stdscr.addstr(22,52,"OPCION INCORRECTA!")
+                            stdscr.getch()  
+                            stdscr.clear()
+                            stdscr.refresh()
+                            break 
+
             elif indice_fila_actual==len(menu)-1:
                 listaDobleBloques.imprimirLista()
                 sys.exit()
@@ -502,7 +666,7 @@ def menu_principal(stdscr):
         stdscr.refresh()
 
 """ ------------------------------------------------------PARA MOSTRAR BLOQUES --------------------------------------------------------------"""
-'''
+
 def menu_bloques(stdscr): #INICIA LAS PROPIEDADES BASICAS
     curses.curs_set(0) # SETEA EL CURSOR EN LA POSICION 0
     index = 0
@@ -518,10 +682,15 @@ def menu_bloques(stdscr): #INICIA LAS PROPIEDADES BASICAS
             stdscr.refresh()
             curses.wrapper(menu_principal)
         elif (tecla==curses.KEY_ENTER) or tecla in [10,13]:
-            nombreUsuarioActual[0]=listaDobleCircularUsuarios.obtenerNombre(index)
+            classMetArbol.limpiarCadenaG()
+            classMetArbol.limpiarRaiz()
+            nuevar=listaDobleBloques.getDataDeNodo(index)
+            arb=classIngreLista.ingresarEnListParaContruccionArbolBinario(nuevar) 
+            classMetArbol.construirArbolAVLdesdeArbolBinario(arb)
+            #classMetArbol.setRaiz(nuevar)
         if( index < 0): # EN CASO DE QUE EL INDICE SE VUELVA NEGAVITO LO DEJAMOS EN 0
-            index = listaDobleCircularUsuarios.tamanio()-1
-        if( index >= listaDobleCircularUsuarios.tamanio()): # EN CASO QUE EL INDICE SE VUELVA MAYOR AL SIZE DEL ARREGLO...
+            index = listaDobleBloques.tamanio()-1
+        if( index >= listaDobleBloques.tamanio()): # EN CASO QUE EL INDICE SE VUELVA MAYOR AL SIZE DEL ARREGLO...
             index = 0 # ... LO LIMITAMOS AL ULTIMO INDICE VALIDO
         pintar_menu(stdscr, index) # MANDAMOS A REPINTAR LA PANTALLA
 
@@ -541,11 +710,11 @@ def pintar_menu(stdsrc, index):
     pinter_ventana(stdsrc) # MANDA A PINTAR EL MARCO
     altura, ancho = stdsrc.getmaxyx() # OBTIENE LA ALTURA Y ANCHO DE LA PANTALLA
     curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLUE) # COLOR DE LAS OPCIONES, INIICIALIZA UNA PAREJA DE COLORES EL COLOR DE LETRA Y COLOR DE FONDO RESPECTIVAMENTE
-    y = int(altura/2) 
-    x = int((ancho/2)-(len(listaDobleCircularUsuarios.obtenerNombre(index))/2))
-    stdsrc.addstr(y,x, listaDobleCircularUsuarios.obtenerNombre(index), curses.color_pair(2)) # HAGREGA UNA CADENA  LA PANTALLA EN COORDENADAS Y, X Y UN ATRIBUTO EN ESTE CASO ES LA PAREJA DE COLORES
+    y = int(0) 
+    x = int(0)
+    stdsrc.addstr(y,x, listaDobleBloques.obtenerCadenaParaCarrusel(index), curses.color_pair(2)) # HAGREGA UNA CADENA  LA PANTALLA EN COORDENADAS Y, X Y UN ATRIBUTO EN ESTE CASO ES LA PAREJA DE COLORES
     stdsrc.refresh()
-'''
+
 
 """ -----------------------------------------------LECTURA ARCHIVO E INGRESO DE DATOS -------------------------------------------------------"""
 
@@ -566,58 +735,56 @@ def archivoBloque(ruta):
             elif uss=="data":
                 #us="{0}".format(row[0]) #fila 0 de archivo .csv
                 dataa="{0}".format(row[1]) #fila 1 de archivo .csv
+                print(dataa)
                 #se crea el arbol binario
-                arb=classIngreLista.ingresarEnListParaContruccionArbolBinario(dataa) 
-                classMetArbol.recorridoInOrden(arb) 
-                print("\n")
-                #classMetArbol.reporteGraphvizArbol(arb)
-                #classMetArbol.generarImagenGraphiz()
+                arb=classIngreLista.ingresarEnListParaContruccionArbolBinario(dataa)                 
                 #se crea el arbol AVL
                 classMetArbol.limpiarCadenaG()
                 classMetArbol.limpiarRaiz()           
                 classMetArbol.construirArbolAVLdesdeArbolBinario(arb)  
-                classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
-                classMetArbol.generarImagenGraphiz()
-                classMetArbol.recorridoInOrden(classMetArbol.obtenerRaiz())
+                #classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
+                #classMetArbol.generarImagenGraphiz()
            
 
     #verificar si es bloque genesis (bloque cabeza o el primero)
-    '''if listaDobleBloques.estaVacia():
+    if listaDobleBloques.estaVacia():
+        index="0"
         fecha=time.strftime("%d-%m-%y") 
         hora=time.strftime("%H:%M:%S")
         fechayhora=fecha+"-::"+hora
-        listaDobleBloques.insertarFinal(str(0), fechayhora, clasee, dataa, "0000", "gudiel")
+        hashant="0000"
+        cadenaParaHash=str(index)+fechayhora+clasee+dataa+hashant
+        miHash=generarHash(cadenaParaHash)
+        generarCadenaJSON(index,fechayhora,clasee,dataa,hashant,miHash)
+        listaDobleBloques.insertarFinal(index,fechayhora,clasee,dataa, hashant,miHash)
     else:
-        hashant=listaDobleBloques.obtenerHashAnt()
-        obidx=int(listaDobleBloques.obtenerIndex())+1
+        index=int(listaDobleBloques.obtenerIndex())+1
         fecha=time.strftime("%d-%m-%y")  
         hora=time.strftime("%H:%M:%S")
         fechayhora=fecha+"-::"+hora
-        listaDobleBloques.insertarFinal(str(obidx), fechayhora, clasee, dataa, hashant, "gudiel")'''
+        hashant=listaDobleBloques.obtenerHashAnt()
+        cadenaParaHash=str(index)+fechayhora+clasee+dataa+hashant
+        miHash=generarHash(cadenaParaHash)
+        generarCadenaJSON(index,fechayhora,clasee,dataa,hashant,miHash)
+        listaDobleBloques.insertarFinal(index,fechayhora,clasee,dataa,hashant,miHash)
 
 '''
-classMetArbol.insertar("a",10)
-classMetArbol.insertar("a",5)
-classMetArbol.insertar("a",13)
-classMetArbol.insertar("a",1)
-classMetArbol.insertar("a",6)
-classMetArbol.insertar("a",17)
-#classMetArbol.insertar("a",16)
-#aja=classMetArbol.obtenerRaiz()
-#aja=aja.hijoIzq
-#aja=aja.hijoIzq
-#aja.hijoIzq=nodoArbolAVL("s",3)
-classMetArbol.recorridoPreOrden(classMetArbol.obtenerRaiz())
-classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
-classMetArbol.generarImagenGraphiz()
-'''
-'''
-hashsha = hashlib.sha256()
+hash1 = hashlib.sha256()
 stexto="hola Altaruru, hoy es lunes 1 de Octubre de 2018"
-hashsha.update(stexto.encode())
-print (hashsha.hexdigest())
+hash1.update(stexto.encode())
+print (hash1.hexdigest())
 
-            '''
+hash2 = hashlib.sha256()
+stexto2="hola Altaruru, hoy es lunes 1 de Octubre de 2018"
+hash2.update(stexto2.encode())
+print (hash2.hexdigest())
+
+if hash1.hexdigest()==hash2.hexdigest():
+    print("\niguales\n")
+else:
+    print("\nnel\n")
+'''
+            
 '''classMetArbol.limpiarCadenaG()
 classMetArbol.limpiarRaiz()            
 classMetArbol.insertar("G1",1)
