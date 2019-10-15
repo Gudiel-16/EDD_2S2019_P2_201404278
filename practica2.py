@@ -136,7 +136,7 @@ class miArbolAVL():
     cadenaG=""
     def _init_(self):
         self.root=None
-        self.cadenaG=""
+        self.cadenaG=""  
 
 
     def obtenerRaiz(self):
@@ -243,6 +243,12 @@ class miArbolAVL():
             self.recorridoInOrden(arbolR.hijoIzq)
             print(arbolR.carnet,end=" ")
             self.recorridoInOrden(arbolR.hijoDer)
+
+    def construirArbolAVLdesdeArbolBinario(self, arbolG):
+        if arbolG!=None:            
+            self.construirArbolAVLdesdeArbolBinario(arbolG.hijoIzq)
+            self.insertar(arbolG.nombre,int(arbolG.carnet))
+            self.construirArbolAVLdesdeArbolBinario(arbolG.hijoDer)
     
     def obtenerAlturaNodo(self, arbolG):
         mayor=0
@@ -297,11 +303,11 @@ class miArbolAVL():
         os.system("dot -Tjpg"+ " arbol.dot " +"-o arbol.jpg")
         os.system("arbol.jpg")
 
-    def obtenerCadenaG(self):
-        return self.cadenaG
-
     def limpiarCadenaG(self):
         self.cadenaG=""
+
+    def limpiarRaiz(self):
+        self.root=None
     
 
 
@@ -317,7 +323,7 @@ class ingresarEnLista:
         self.simb=[",",":","{","}"]
         self.recorrido=None
 
-    def ingreList(self,cadena):
+    def ingresarEnListParaContruccionArbolBinario(self,cadena):
         for cad in cadena:
             if cad!=" " and cad!="\n" and cad!="\"":
                 if cad =="-":
@@ -342,16 +348,16 @@ class ingresarEnLista:
         self.ingresar2=""
         print(self.listArbol)
         
-        miraizz=self.ingresarEnArbol()
+        miraizz=self.ingresarEnArbolBinario()
         return miraizz
     
-    def ingresarEnArbol(self):
+    def ingresarEnArbolBinario(self):
         listLlaves=[]
         listMov=[]
         cont=0 #para saber el index de lista en que voy
         contIzqoDer=0
-        oa=miArbolAVL()
-        miRaiz=oa.obtenerRaiz()
+        #oa=miArbolAVL()
+        miRaiz=None
 
         for ol in self.listArbol: #recorro la lista
             for odcl in ol: #recorro cada caracter de elemento de lista
@@ -359,13 +365,13 @@ class ingresarEnLista:
                     listLlaves.append("{")
                 elif odcl=="}":
                     listLlaves.pop(0)
-                    if listMov.__len__()>0:
+                    if listMov.__len__()>0: #cada vez que encuentre llave, eliminara el ultimo elemento de la lista
                         listMov.pop(listMov.__len__()-1)
             if ol=="value" and listLlaves.count("{")==1: #quiere decir que es la raiz
                 carn=self.listArbol[cont+2]
                 nom=self.listArbol[cont+4]                
                 miRaiz=self.ingresarRaiz(nom,carn,miRaiz)
-            elif ol=="value" and listLlaves.count("{")>1: #recorrera 
+            elif ol=="value" and listLlaves.count("{")>1: #recorrera hacia izq o der
                 carn=self.listArbol[cont+2]
                 nom=self.listArbol[cont+4]                
                 nuevo=nodoArbolAVL(nom,carn)
@@ -373,16 +379,16 @@ class ingresarEnLista:
                 contt=1
                 for rec in listMov:
                     if contt==listMov.__len__(): #validar que sea el ultimo elemento de la lista
-                        if listMov[listMov.__len__()-1]=="left":
+                        if listMov[listMov.__len__()-1]=="left": #ingresara por la izquierda
                             self.recorrido.hijoIzq=nuevo
-                        elif listMov[listMov.__len__()-1]=="right":
+                        elif listMov[listMov.__len__()-1]=="right": #ingresara por la derecha
                             self.recorrido.hijoDer=nuevo
-                    elif rec=="left":
+                    elif rec=="left": #sino es el ultimo recorrera por la izquierda
                         try:
                             self.recorrido=self.recorrido.hijoIzq
                         except:
                             pass                                        
-                    elif rec=="right":
+                    elif rec=="right": #sino es el ultimo recorrera por la derecha
                         try:
                             self.recorrido=self.recorrido.hijoDer
                         except:
@@ -402,7 +408,7 @@ class ingresarEnLista:
         nuevo=nodoArbolAVL(nom,carne)
         miArbol=nuevo
         return miArbol
-
+     
 
 """ ------------------------------------------------------------ OBJETOS ---------------------------------------------------------------------"""
 listaDobleBloques= dobleBloques()
@@ -560,15 +566,20 @@ def archivoBloque(ruta):
             elif uss=="data":
                 #us="{0}".format(row[0]) #fila 0 de archivo .csv
                 dataa="{0}".format(row[1]) #fila 1 de archivo .csv
-                arb=classIngreLista.ingreList(dataa)  
-                classMetArbol.reporteGraphvizArbol(arb)
-                classMetArbol.generarImagenGraphiz() 
-                print("\ninorder\n") 
-                classMetArbol.recorridoInOrden(arb)
-                print("\nposorder\n")
-                classMetArbol.recorridoPosOrden(arb)
-                print("\npreorder\n")
-                classMetArbol.recorridoPreOrden(arb)            
+                #se crea el arbol binario
+                arb=classIngreLista.ingresarEnListParaContruccionArbolBinario(dataa) 
+                classMetArbol.recorridoInOrden(arb) 
+                print("\n")
+                #classMetArbol.reporteGraphvizArbol(arb)
+                #classMetArbol.generarImagenGraphiz()
+                #se crea el arbol AVL
+                classMetArbol.limpiarCadenaG()
+                classMetArbol.limpiarRaiz()           
+                classMetArbol.construirArbolAVLdesdeArbolBinario(arb)  
+                classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
+                classMetArbol.generarImagenGraphiz()
+                classMetArbol.recorridoInOrden(classMetArbol.obtenerRaiz())
+           
 
     #verificar si es bloque genesis (bloque cabeza o el primero)
     '''if listaDobleBloques.estaVacia():
@@ -590,7 +601,7 @@ classMetArbol.insertar("a",5)
 classMetArbol.insertar("a",13)
 classMetArbol.insertar("a",1)
 classMetArbol.insertar("a",6)
-classMetArbol.insertar("a",11)
+classMetArbol.insertar("a",17)
 #classMetArbol.insertar("a",16)
 #aja=classMetArbol.obtenerRaiz()
 #aja=aja.hijoIzq
@@ -607,12 +618,20 @@ hashsha.update(stexto.encode())
 print (hashsha.hexdigest())
 
             '''
+'''classMetArbol.limpiarCadenaG()
+classMetArbol.limpiarRaiz()            
+classMetArbol.insertar("G1",1)
+classMetArbol.insertar("G2",5)
+classMetArbol.insertar("G3",6)
+classMetArbol.insertar("G4",10)
+classMetArbol.insertar("G5",13)
+classMetArbol.insertar("G6",16)
+classMetArbol.insertar("G7",17)
+classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
+classMetArbol.generarImagenGraphiz()
+'''
 curses.wrapper(menu_principal)
 
-prueba=[]
-print(prueba)
-#prueba.pop(prueba.__len__()-1)
-print(prueba.__len__())
 
 
 
