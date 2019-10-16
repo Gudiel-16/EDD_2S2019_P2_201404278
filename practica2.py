@@ -6,10 +6,15 @@ import os
 import sys
 import hashlib
 import json
+import socket
+import select
+import threading
 
 from curses import KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN, textpad
 
 menu=['Insertar Bloque','Seleccionar Bloque','Reportes','Salir']
+
+variableJsonEnviar=['vacio']
 
 """ ---------------------------------------------------LISTA DOBLE PARA BLOQUES --------------------------------------------------------------------"""
 class nodoDobleBloques():
@@ -725,8 +730,7 @@ def menu_principal(stdscr):
                             stdscr.refresh()
                             break 
 
-            elif indice_fila_actual==len(menu)-1:
-                listaDobleBloques.imprimirLista()
+            elif indice_fila_actual==len(menu)-1:                
                 sys.exit()
         
         print_menu(stdscr,indice_fila_actual)
@@ -801,7 +805,6 @@ def archivoBloque(ruta):
             elif uss=="data":
                 #us="{0}".format(row[0]) #fila 0 de archivo .csv
                 dataa="{0}".format(row[1]) #fila 1 de archivo .csv
-                print(dataa)
                 #se crea el arbol binario
                 arb=classIngreLista.ingresarEnListParaContruccionArbolBinario(dataa)                 
                 #se crea el arbol AVL
@@ -834,6 +837,39 @@ def archivoBloque(ruta):
         generarCadenaJSON(index,fechayhora,clasee,dataa,hashant,miHash)
         listaDobleBloques.insertarFinal(index,fechayhora,clasee,dataa,hashant,miHash)
 
+    variableJsonEnviar[0]=dataa
+
+
+def comunicacionConServerSiempreEscuchando():
+
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if len(sys.argv) != 3:
+        print ("Correct usage: script, IP address, port number")
+        exit()
+    IP_address = str(sys.argv[1])
+    Port = int(sys.argv[2])
+    server.connect((IP_address, Port))
+
+    while True:
+
+        # mantiene una lista de posibles flujos de entrada
+        read_sockets = select.select([server], [], [], 1)[0]
+        import msvcrt
+        if msvcrt.kbhit(): read_sockets.append(sys.stdin)
+
+        for socks in read_sockets:
+            if socks == server: #si recibe un mensaje
+                message = socks.recv(2048)
+                #print (message.decode('utf-8'))
+            else:
+                if variableJsonEnviar[0]!='vacio': #para enviar mensaje al servidor
+                    message = variableJsonEnviar[0]
+                    server.sendall(message.encode('utf-8'))
+                    sys.stdout.write(message)
+                    sys.stdout.flush()
+                    variableJsonEnviar[0]='vacio'
+    server.close()
+
 '''
 hash1 = hashlib.sha256()
 stexto="hola Altaruru, hoy es lunes 1 de Octubre de 2018"
@@ -863,9 +899,11 @@ classMetArbol.insertar("G7",17)
 classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
 classMetArbol.generarImagenGraphiz()
 '''
+
+hiloCom=threading.Thread(target=comunicacionConServerSiempreEscuchando)
+hiloCom.start()
+
 curses.wrapper(menu_principal)
-
-
 
 
 
