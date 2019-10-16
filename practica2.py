@@ -339,15 +339,36 @@ class miArbolAVL():
         if arbolR!=None:            
             self.reporteRecorridoPosOrden(arbolR.hijoIzq)
             self.reporteRecorridoPosOrden(arbolR.hijoDer)
-            cadin="\"" + str(arbolR.carnet) + "\nNombre: " + str(arbolR.nombre) + "\""
+            cadin="\"Carnet: " + str(arbolR.carnet) + "\nNombre: " + str(arbolR.nombre) + "\""
             self.preport.append(cadin)
 
     def reporteRecorridoInOrden(self, arbolR):
         if arbolR!=None:            
             self.reporteRecorridoInOrden(arbolR.hijoIzq)
-            cadin="\"" + str(arbolR.carnet) + "\nNombre: " + str(arbolR.nombre) + "\""
+            cadin="\"Carnet: " + str(arbolR.carnet) + "\nNombre: " + str(arbolR.nombre) + "\""
             self.preport.append(cadin)
             self.reporteRecorridoInOrden(arbolR.hijoDer)
+
+    def reporteRecorridoPreOrdenConsola(self, arbolR):
+        if arbolR!=None:
+            cadin=str(arbolR.carnet) + "-" + str(arbolR.nombre)
+            self.preport.append(cadin)
+            self.reporteRecorridoPreOrdenConsola(arbolR.hijoIzq)
+            self.reporteRecorridoPreOrdenConsola(arbolR.hijoDer)
+
+    def reporteRecorridoPosOrdenConsola(self, arbolR):
+        if arbolR!=None:            
+            self.reporteRecorridoPosOrdenConsola(arbolR.hijoIzq)
+            self.reporteRecorridoPosOrdenConsola(arbolR.hijoDer)
+            cadin=str(arbolR.carnet) + "-" + str(arbolR.nombre)
+            self.preport.append(cadin)
+
+    def reporteRecorridoInOrdenConsola(self, arbolR):
+        if arbolR!=None:            
+            self.reporteRecorridoInOrdenConsola(arbolR.hijoIzq)
+            cadin=str(arbolR.carnet) + "-" + str(arbolR.nombre)
+            self.preport.append(cadin)
+            self.reporteRecorridoInOrdenConsola(arbolR.hijoDer)
 
     def generarCadenaRecorrido(self):
         cont=1
@@ -355,8 +376,19 @@ class miArbolAVL():
             if cont == self.preport.__len__():
                 break
             else:                
-                self.cadenaG+=ml + " -> " + self.preport[cont]
+                self.cadenaG+=str(ml) + " -> " + str(self.preport[cont]) + " \n"
             cont=cont+1
+
+    def generarCadenaRecorridoConsola(self):
+        cont=1
+        for ml in self.preport:
+            if cont == self.preport.__len__():
+                self.cadenaG+=str(ml) + " -> null"
+                break
+            else:                
+                self.cadenaG+=str(ml) + " -> "           
+            cont=cont+1
+        return self.cadenaG
 
     def generarImagenGraphiz(self):
         # open(nombre_archivo.ext, formato)
@@ -378,9 +410,6 @@ class miArbolAVL():
 
     def limpiarCadenaG(self):
         self.cadenaG=""
-
-    def getlListRecorrido(self):
-        return self.preport
 
     def limpiarListRecorrido(self):
         self.preport=[]
@@ -642,15 +671,53 @@ def menu_principal(stdscr):
                             stdscr.refresh()                            
                             break
                         elif a=="4":
+                            classMetArbol.limpiarListRecorrido()
+                            classMetArbol.limpiarCadenaG()
+                            classMetArbol.reporteRecorridoPosOrden(classMetArbol.obtenerRaiz())
+                            classMetArbol.generarCadenaRecorrido()
+                            classMetArbol.generarImagenGraphiz()
+                            stdscr.clear()
+                            stdscr.refresh() 
                             break
                         elif a=="5":
+                            classMetArbol.limpiarListRecorrido()
+                            classMetArbol.limpiarCadenaG()
+                            classMetArbol.reporteRecorridoInOrden(classMetArbol.obtenerRaiz())
+                            classMetArbol.generarCadenaRecorrido()
+                            classMetArbol.generarImagenGraphiz()
+                            stdscr.clear()
+                            stdscr.refresh() 
                             break
                         elif a=="6":
+                            classMetArbol.limpiarListRecorrido()
+                            classMetArbol.limpiarCadenaG()
+                            classMetArbol.reporteRecorridoPreOrdenConsola(classMetArbol.obtenerRaiz())
+                            micad=classMetArbol.generarCadenaRecorridoConsola()
+                            stdscr.addstr(16,0,str(micad))
+                            stdscr.getch() 
+                            stdscr.clear()
+                            stdscr.refresh() 
                             break
                         elif a=="7":
+                            classMetArbol.limpiarListRecorrido()
+                            classMetArbol.limpiarCadenaG()
+                            classMetArbol.reporteRecorridoPosOrdenConsola(classMetArbol.obtenerRaiz())
+                            micad=classMetArbol.generarCadenaRecorridoConsola()
+                            stdscr.addstr(16,0,str(micad))
+                            stdscr.getch() 
+                            stdscr.clear()
+                            stdscr.refresh()                             
                             break 
                         elif a=="8":
-                            break  
+                            classMetArbol.limpiarListRecorrido()
+                            classMetArbol.limpiarCadenaG()
+                            classMetArbol.reporteRecorridoInOrdenConsola(classMetArbol.obtenerRaiz())
+                            micad=classMetArbol.generarCadenaRecorridoConsola()
+                            stdscr.addstr(16,0,str(micad))
+                            stdscr.getch() 
+                            stdscr.clear()
+                            stdscr.refresh() 
+                            break 
                         else:
                             stdscr.addstr(22,52,"OPCION INCORRECTA!")
                             stdscr.getch()  
@@ -714,7 +781,6 @@ def pintar_menu(stdsrc, index):
     x = int(0)
     stdsrc.addstr(y,x, listaDobleBloques.obtenerCadenaParaCarrusel(index), curses.color_pair(2)) # HAGREGA UNA CADENA  LA PANTALLA EN COORDENADAS Y, X Y UN ATRIBUTO EN ESTE CASO ES LA PAREJA DE COLORES
     stdsrc.refresh()
-
 
 """ -----------------------------------------------LECTURA ARCHIVO E INGRESO DE DATOS -------------------------------------------------------"""
 
