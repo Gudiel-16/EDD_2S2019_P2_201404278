@@ -541,9 +541,59 @@ def generarCadenaJSON(indexj, fechaj, classj, dataj, prevhash, hashj):
     cadgen+="\"HASH\": \"" + str(hashj) + "\"\n"
     cadgen+="}"
 
-    f = open("archijson.json", "w") 
+    f = open("JsonEnviado.json", "w") 
     f.write(cadgen)
     f.close()
+    return cadgen
+
+def validarQueBlockChainEsteBueno(cadenaBC):
+    #creo el el .json
+    f=open("JsonRecibido.json", "w") 
+    f.write(cadenaBC)
+    f.close()
+
+    #variables para extraer datos en json
+    indexj=""
+    fechaj=""
+    classj=""
+    dataj=""
+    prevhash=""
+    hashj=""
+
+    #abro el .json creado
+    with open("JsonRecibido.json") as contenido:
+        result=json.load(contenido)
+        for res in result:
+            if res=='INDEX':
+                indexj=result['INDEX']
+            if res=='TIMESTAMP':
+                fechaj=result['TIMESTAMP']
+            if res=='CLASS':
+                classj=result['CLASS']
+            if res=='DATA':
+                dataj=result['DATA']
+            if res=='PREVIOUSHASH':
+                prevhash=result['PREVIOUSHASH']
+            if res=='HASH':
+                hashj=result['HASH']
+    
+    dataj=str(dataj)
+
+    #se quitan espacios, saltos de linea, se cambia ' por " y se cambia None por null
+    dataj=dataj.replace("\n","")
+    dataj=dataj.replace(" ","")
+    dataj=dataj.replace("\'","\"")
+    dataj=dataj.replace('None','null')
+    cadenaHash=str(indexj)+str(fechaj)+str(classj)+str(dataj)+str(prevhash)
+
+    mihashg=generarHash(cadenaHash)
+    
+    if hashj==mihashg:
+        print("\nBLOCK BUENO\n")
+    else:
+        print("\nBLOCK MALO\n")
+    
+
 
 
 
@@ -730,8 +780,13 @@ def menu_principal(stdscr):
                             stdscr.refresh()
                             break 
 
-            elif indice_fila_actual==len(menu)-1:                
-                sys.exit()
+            elif indice_fila_actual==len(menu)-1:
+                llegadaMensaje()
+                time.sleep(1)
+                stdscr.clear()
+                stdscr.refresh()
+                #stdscr.clear()
+                #sys.exit()
         
         print_menu(stdscr,indice_fila_actual)
         stdscr.refresh()
@@ -786,6 +841,20 @@ def pintar_menu(stdsrc, index):
     stdsrc.addstr(y,x, listaDobleBloques.obtenerCadenaParaCarrusel(index), curses.color_pair(2)) # HAGREGA UNA CADENA  LA PANTALLA EN COORDENADAS Y, X Y UN ATRIBUTO EN ESTE CASO ES LA PAREJA DE COLORES
     stdsrc.refresh()
 
+def llegadaMensaje():
+    fullscreen = curses.initscr() 
+    # Dibuja un borde al rededor de los límites del window
+    fullscreen.border(0)    
+    # Se coloca el texto aproximadamente en el centro
+    fullscreen.addstr(12, 25, "----- ENTRADA DE MENSAJE! ------")    
+    # Para que los cambios se muestren hay que usar refresh()
+    fullscreen.refresh()    
+    # Se detiene el programa hasta que una tecla sea pulsada
+    #fullscreen.getch()    
+    # Se desactiva curses
+    #curses.endwin()
+       
+
 """ -----------------------------------------------LECTURA ARCHIVO E INGRESO DE DATOS -------------------------------------------------------"""
 
 def archivoBloque(ruta): 
@@ -813,7 +882,10 @@ def archivoBloque(ruta):
                 classMetArbol.construirArbolAVLdesdeArbolBinario(arb)  
                 #classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
                 #classMetArbol.generarImagenGraphiz()
-           
+
+     #      
+    dataa=str(dataa)
+    #
 
     #verificar si es bloque genesis (bloque cabeza o el primero)
     if listaDobleBloques.estaVacia():
@@ -821,25 +893,30 @@ def archivoBloque(ruta):
         fecha=time.strftime("%d-%m-%y") 
         hora=time.strftime("%H:%M:%S")
         fechayhora=fecha+"-::"+hora
-        hashant="0000"
-        cadenaParaHash=str(index)+fechayhora+clasee+dataa+hashant
+        hashant="0000"   
+        dataa=dataa.replace("\n","")
+        dataa=dataa.replace(" ","")
+        dataa=dataa.replace("\'","\"")
+        cadenaParaHash=str(index) + str(fechayhora) +str(clasee)+str(dataa)+str(hashant)
         miHash=generarHash(cadenaParaHash)
-        generarCadenaJSON(index,fechayhora,clasee,dataa,hashant,miHash)
-        listaDobleBloques.insertarFinal(index,fechayhora,clasee,dataa, hashant,miHash)
+        variableJsonEnviar[0]=generarCadenaJSON(index,fechayhora,clasee,dataa,hashant,miHash)
+        validarQueBlockChainEsteBueno(variableJsonEnviar[0])
+        #listaDobleBloques.insertarFinal(index,fechayhora,clasee,dataa, hashant,miHash)
     else:
         index=int(listaDobleBloques.obtenerIndex())+1
         fecha=time.strftime("%d-%m-%y")  
         hora=time.strftime("%H:%M:%S")
         fechayhora=fecha+"-::"+hora
         hashant=listaDobleBloques.obtenerHashAnt()
-        cadenaParaHash=str(index)+fechayhora+clasee+dataa+hashant
+        dataa=dataa.replace("\n","")
+        dataa=dataa.replace(" ","")
+        dataa=dataa.replace("\'","\"")
+        cadenaParaHash=str(index)+str(fechayhora)+str(clasee)+str(dataa)+str(hashant)
         miHash=generarHash(cadenaParaHash)
-        generarCadenaJSON(index,fechayhora,clasee,dataa,hashant,miHash)
-        listaDobleBloques.insertarFinal(index,fechayhora,clasee,dataa,hashant,miHash)
-
-    variableJsonEnviar[0]=dataa
-
-
+        variableJsonEnviar[0]=generarCadenaJSON(index,fechayhora,clasee,dataa,hashant,miHash)
+        validarQueBlockChainEsteBueno(variableJsonEnviar[0])
+        #listaDobleBloques.insertarFinal(index,fechayhora,clasee,dataa,hashant,miHash)
+   
 def comunicacionConServerSiempreEscuchando():
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -860,9 +937,14 @@ def comunicacionConServerSiempreEscuchando():
         for socks in read_sockets:
             if socks == server: #si recibe un mensaje
                 message = socks.recv(2048)
-                #print (message.decode('utf-8'))
+                if message.decode('utf-8')=='true': #guardara en lista
+                    pass
+                elif message.decode('utf-8')=='false': #no guardara en lista
+                    pass
+                else: #sera un blockchain el que recibe
+                    pass
             else:
-                if variableJsonEnviar[0]!='vacio': #para enviar mensaje al servidor
+                if variableJsonEnviar[0]!='vacio': #para enviar mensaje al servidor (se envia el blockchain)
                     message = variableJsonEnviar[0]
                     server.sendall(message.encode('utf-8'))
                     sys.stdout.write(message)
@@ -870,22 +952,6 @@ def comunicacionConServerSiempreEscuchando():
                     variableJsonEnviar[0]='vacio'
     server.close()
 
-'''
-hash1 = hashlib.sha256()
-stexto="hola Altaruru, hoy es lunes 1 de Octubre de 2018"
-hash1.update(stexto.encode())
-print (hash1.hexdigest())
-
-hash2 = hashlib.sha256()
-stexto2="hola Altaruru, hoy es lunes 1 de Octubre de 2018"
-hash2.update(stexto2.encode())
-print (hash2.hexdigest())
-
-if hash1.hexdigest()==hash2.hexdigest():
-    print("\niguales\n")
-else:
-    print("\nnel\n")
-'''
             
 '''classMetArbol.limpiarCadenaG()
 classMetArbol.limpiarRaiz()            
@@ -899,9 +965,9 @@ classMetArbol.insertar("G7",17)
 classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
 classMetArbol.generarImagenGraphiz()
 '''
-
-hiloCom=threading.Thread(target=comunicacionConServerSiempreEscuchando)
-hiloCom.start()
+#validarQueBlockChainEsteBueno("na")
+'''hiloCom=threading.Thread(target=comunicacionConServerSiempreEscuchando)
+hiloCom.start()'''
 
 curses.wrapper(menu_principal)
 
