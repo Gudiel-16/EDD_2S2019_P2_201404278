@@ -15,6 +15,8 @@ from curses import KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN, textpad
 menu=['Insertar Bloque','Seleccionar Bloque','Reportes','Salir']
 
 variableJsonEnviar=['vacio']
+listIngresarBloque=['vacio','vacio','vacio','vacio','vacio','vacio']
+#listaDobleBloques.insertarFinal(index,fechayhora,clasee,dataa, hashant,miHash)
 
 """ ---------------------------------------------------LISTA DOBLE PARA BLOQUES --------------------------------------------------------------------"""
 class nodoDobleBloques():
@@ -583,19 +585,28 @@ def validarQueBlockChainEsteBueno(cadenaBC):
     dataj=dataj.replace("\n","")
     dataj=dataj.replace(" ","")
     dataj=dataj.replace("\'","\"")
-    dataj=dataj.replace('None','null')
+    dataj=dataj.replace('None','null')       
+
+    #concatenacion y generar hash
     cadenaHash=str(indexj)+str(fechaj)+str(classj)+str(dataj)+str(prevhash)
-
     mihashg=generarHash(cadenaHash)
-    
+
+    #se compueba si el hash esta bueno
     if hashj==mihashg:
-        print("\nBLOCK BUENO\n")
+        #ingreso datos a lista ya creada, es espera a que el servidor retorne true para luego agregarla a lista doble enlazada
+        #listaDobleBloques.insertarFinal(index,fechayhora,clasee,dataa, hashant,miHash)
+        listIngresarBloque[0]=str(indexj)
+        listIngresarBloque[1]=str(fechaj)
+        listIngresarBloque[2]=str(classj)
+        listIngresarBloque[3]=str(dataj)
+        listIngresarBloque[4]=str(prevhash)
+        listIngresarBloque[5]=str(hashj) 
+        return True
+        #print("\nBLOCK BUENO\n")
     else:
-        print("\nBLOCK MALO\n")
+        return False
+        #print("\nBLOCK MALO\n")
     
-
-
-
 
 """ ----------------------------------------------------PARA EL MENU PRINCIPAL ---------------------------------------------------------------"""
 def print_menu(stdscr, selected_row_idx):
@@ -781,12 +792,12 @@ def menu_principal(stdscr):
                             break 
 
             elif indice_fila_actual==len(menu)-1:
-                llegadaMensaje()
+                sys.exit()
+                '''llegadaMensaje()
                 time.sleep(1)
                 stdscr.clear()
                 stdscr.refresh()
-                #stdscr.clear()
-                #sys.exit()
+                #stdscr.clear()'''                
         
         print_menu(stdscr,indice_fila_actual)
         stdscr.refresh()
@@ -853,8 +864,7 @@ def llegadaMensaje():
     #fullscreen.getch()    
     # Se desactiva curses
     #curses.endwin()
-       
-
+ 
 """ -----------------------------------------------LECTURA ARCHIVO E INGRESO DE DATOS -------------------------------------------------------"""
 
 def archivoBloque(ruta): 
@@ -900,7 +910,13 @@ def archivoBloque(ruta):
         cadenaParaHash=str(index) + str(fechayhora) +str(clasee)+str(dataa)+str(hashant)
         miHash=generarHash(cadenaParaHash)
         variableJsonEnviar[0]=generarCadenaJSON(index,fechayhora,clasee,dataa,hashant,miHash)
-        validarQueBlockChainEsteBueno(variableJsonEnviar[0])
+        listIngresarBloque[0]=str(index)
+        listIngresarBloque[1]=str(fechayhora)
+        listIngresarBloque[2]=str(clasee)
+        listIngresarBloque[3]=str(dataa)
+        listIngresarBloque[4]=str(hashant)
+        listIngresarBloque[5]=str(miHash) 
+        #validarQueBlockChainEsteBueno(variableJsonEnviar[0])
         #listaDobleBloques.insertarFinal(index,fechayhora,clasee,dataa, hashant,miHash)
     else:
         index=int(listaDobleBloques.obtenerIndex())+1
@@ -914,7 +930,7 @@ def archivoBloque(ruta):
         cadenaParaHash=str(index)+str(fechayhora)+str(clasee)+str(dataa)+str(hashant)
         miHash=generarHash(cadenaParaHash)
         variableJsonEnviar[0]=generarCadenaJSON(index,fechayhora,clasee,dataa,hashant,miHash)
-        validarQueBlockChainEsteBueno(variableJsonEnviar[0])
+        #validarQueBlockChainEsteBueno(variableJsonEnviar[0])
         #listaDobleBloques.insertarFinal(index,fechayhora,clasee,dataa,hashant,miHash)
    
 def comunicacionConServerSiempreEscuchando():
@@ -926,7 +942,7 @@ def comunicacionConServerSiempreEscuchando():
     IP_address = str(sys.argv[1])
     Port = int(sys.argv[2])
     server.connect((IP_address, Port))
-
+    aja='true'
     while True:
 
         # mantiene una lista de posibles flujos de entrada
@@ -937,12 +953,32 @@ def comunicacionConServerSiempreEscuchando():
         for socks in read_sockets:
             if socks == server: #si recibe un mensaje
                 message = socks.recv(2048)
-                if message.decode('utf-8')=='true': #guardara en lista
-                    pass
-                elif message.decode('utf-8')=='false': #no guardara en lista
+                msj=message.decode('utf-8')
+                msj=str(msj)
+                print(msj)
+                if msj=='true': #guardara en lista
+                    listaDobleBloques.insertarFinal(listIngresarBloque[0],listIngresarBloque[1],listIngresarBloque[2],listIngresarBloque[3], listIngresarBloque[4],listIngresarBloque[5])
+                    #reseteo en espera de otro bloque
+                    listIngresarBloque[0]='vacio'
+                    listIngresarBloque[1]='vacio'
+                    listIngresarBloque[2]='vacio'
+                    listIngresarBloque[3]='vacio'
+                    listIngresarBloque[4]='vacio'
+                    listIngresarBloque[5]='vacio' 
+                elif msj=='false': #no guardara en lista
                     pass
                 else: #sera un blockchain el que recibe
-                    pass
+                    print(listIngresarBloque)
+                    '''if validarQueBlockChainEsteBueno(msj)==False: #si la comprobacion esta mala, enviara msj 'false'
+                        nNessage = 'false'
+                        server.sendall(nNessage.encode('utf-8'))
+                        sys.stdout.write(nNessage)
+                        sys.stdout.flush()
+                    else:
+                        nNessage = 'true'
+                        server.sendall(nNessage.encode('utf-8'))
+                        sys.stdout.write(nNessage)
+                        sys.stdout.flush()'''
             else:
                 if variableJsonEnviar[0]!='vacio': #para enviar mensaje al servidor (se envia el blockchain)
                     message = variableJsonEnviar[0]
@@ -950,6 +986,13 @@ def comunicacionConServerSiempreEscuchando():
                     sys.stdout.write(message)
                     sys.stdout.flush()
                     variableJsonEnviar[0]='vacio'
+                elif aja=='true':
+                    message = 'true'
+                    server.sendall(message.encode('utf-8'))
+                    sys.stdout.write(message)
+                    sys.stdout.flush()
+                    aja='vacio'
+
     server.close()
 
             
@@ -966,8 +1009,8 @@ classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
 classMetArbol.generarImagenGraphiz()
 '''
 #validarQueBlockChainEsteBueno("na")
-'''hiloCom=threading.Thread(target=comunicacionConServerSiempreEscuchando)
-hiloCom.start()'''
+hiloCom=threading.Thread(target=comunicacionConServerSiempreEscuchando)
+hiloCom.start()
 
 curses.wrapper(menu_principal)
 
