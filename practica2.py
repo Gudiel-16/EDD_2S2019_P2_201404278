@@ -110,11 +110,12 @@ class dobleBloques():
         return cadret
 
     def reporteBloques(self):
-        actual=self.primero
-        while actual.siguiente is not None:
-            self.cadenaG+="\"Class= " + actual.clase + "\nTimeStamp= " + actual.hora + "\nPHASH= " + actual.hashant + "\n HASH= " + actual.hashh + "\""
-            self.cadenaG+=" -> " + "\"Class= " + actual.siguiente.clase + "\nTimeStamp= " + actual.siguiente.hora + "\nPHASH= " + actual.siguiente.hashant + "\n HASH= " + actual.siguiente.hashh + "\" [dir=both];"
-            actual=actual.siguiente     
+        if self.primero is not None:
+            actual=self.primero
+            while actual.siguiente is not None:
+                self.cadenaG+="\"Class= " + actual.clase + "\nTimeStamp= " + actual.hora + "\nPHASH= " + actual.hashant + "\n HASH= " + actual.hashh + "\""
+                self.cadenaG+=" -> " + "\"Class= " + actual.siguiente.clase + "\nTimeStamp= " + actual.siguiente.hora + "\nPHASH= " + actual.siguiente.hashant + "\n HASH= " + actual.siguiente.hashh + "\" [dir=both];"
+                actual=actual.siguiente     
     
     def generarImagenGraphiz(self):
         # open(nombre_archivo.ext, formato)
@@ -178,6 +179,9 @@ class colaHistorial():
         for i in range(index):
             actual=actual.siguiente
         return actual.msjHistorial
+
+    def tamanio(self):
+        return self.size
 
     def eliminar(self):
         aux=self.primero.siguiente
@@ -439,9 +443,9 @@ class miArbolAVL():
             cont=cont+1
         return self.cadenaG
 
-    def generarImagenGraphiz(self):
-        # open(nombre_archivo.ext, formato)
-        f = open("arbol.dot", "w") 
+    def generarImagenGraphiz(self,nomimg):
+        # open(nombre_archivo.ext, formato)        
+        f = open(str(nomimg)+".dot", "w") 
         # write("texto a escribir") 
         
         f.write("digraph G {\n")
@@ -454,8 +458,8 @@ class miArbolAVL():
         # CIERRA EL ARCHIVO
         f.close()
         # dot -Tjpg ruta_archivo_dot.dot -o nombre_archivo_salida.jpg
-        os.system("dot -Tjpg"+ " arbol.dot " +"-o arbol.jpg")
-        os.system("arbol.jpg")
+        os.system("dot -Tjpg " + str(nomimg) + ".dot -o " + str(nomimg) + ".jpg")
+        os.system(str(nomimg)+".jpg")
 
     def limpiarCadenaG(self):
         self.cadenaG=""
@@ -466,7 +470,7 @@ class miArbolAVL():
     def limpiarRaiz(self):
         self.root=None
     
-""" ------------------------------------------------------------ PARA CREAR ARBOL ---------------------------------------------------------------------"""
+""" --------------------------------------------------------- PARA CREAR ARBOL ---------------------------------------------------------------------"""
 class ingresarEnLista:
 
     def __init__(self):
@@ -756,76 +760,140 @@ def menu_principal(stdscr):
                         stdscr.addstr(14,2,format(a))
                     elif tecla==10:#enter                                                
                         if a=="1":
-                            listaDobleBloques.limpiarCadenaG()
-                            listaDobleBloques.reporteBloques()
-                            listaDobleBloques.generarImagenGraphiz()
-                            stdscr.clear()
-                            stdscr.refresh()
-                            break
+                            try:
+                                listaDobleBloques.limpiarCadenaG()
+                                listaDobleBloques.reporteBloques()
+                                listaDobleBloques.generarImagenGraphiz()
+                                stdscr.clear()
+                                stdscr.refresh()
+                                break
+                            except:
+                                stdscr.addstr(20,35,"SE PRODUJO UN ERROR!")
+                                stdscr.refresh()
+                                stdscr.getch()
+                                stdscr.clear()
+                                stdscr.refresh() 
+                                break
                         elif a=="2":
-                            classMetArbol.limpiarCadenaG()
-                            classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
-                            classMetArbol.generarImagenGraphiz()
-                            stdscr.clear()
-                            stdscr.refresh()
-                            break
+                            try:
+                                classMetArbol.limpiarCadenaG()
+                                classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
+                                classMetArbol.generarImagenGraphiz("ArbolReport")
+                                stdscr.clear()
+                                stdscr.refresh()
+                                break
+                            except:
+                                stdscr.addstr(20,35,"SE PRODUJO UN ERROR!")
+                                stdscr.refresh()
+                                stdscr.getch()
+                                stdscr.clear()
+                                stdscr.refresh() 
+                                break
                         elif a=="3":
-                            classMetArbol.limpiarListRecorrido()
-                            classMetArbol.limpiarCadenaG()
-                            classMetArbol.reporteRecorridoPreOrden(classMetArbol.obtenerRaiz())
-                            classMetArbol.generarCadenaRecorrido()
-                            classMetArbol.generarImagenGraphiz()
-                            stdscr.clear()
-                            stdscr.refresh()                            
-                            break
+                            try:
+                                classMetArbol.limpiarListRecorrido()
+                                classMetArbol.limpiarCadenaG()
+                                classMetArbol.reporteRecorridoPreOrden(classMetArbol.obtenerRaiz())
+                                classMetArbol.generarCadenaRecorrido()
+                                classMetArbol.generarImagenGraphiz("PreOrdenReport")
+                                stdscr.clear()
+                                stdscr.refresh()                            
+                                break
+                            except:
+                                stdscr.addstr(20,35,"SE PRODUJO UN ERROR!")
+                                stdscr.refresh()
+                                stdscr.getch()
+                                stdscr.clear()
+                                stdscr.refresh() 
+                                break
                         elif a=="4":
-                            classMetArbol.limpiarListRecorrido()
-                            classMetArbol.limpiarCadenaG()
-                            classMetArbol.reporteRecorridoPosOrden(classMetArbol.obtenerRaiz())
-                            classMetArbol.generarCadenaRecorrido()
-                            classMetArbol.generarImagenGraphiz()
-                            stdscr.clear()
-                            stdscr.refresh() 
-                            break
+                            try:
+                                classMetArbol.limpiarListRecorrido()
+                                classMetArbol.limpiarCadenaG()
+                                classMetArbol.reporteRecorridoPosOrden(classMetArbol.obtenerRaiz())
+                                classMetArbol.generarCadenaRecorrido()
+                                classMetArbol.generarImagenGraphiz("PosOrdenReport")
+                                stdscr.clear()
+                                stdscr.refresh() 
+                                break
+                            except:
+                                stdscr.addstr(20,35,"SE PRODUJO UN ERROR!")
+                                stdscr.refresh()
+                                stdscr.getch()
+                                stdscr.clear()
+                                stdscr.refresh() 
+                                break
                         elif a=="5":
-                            classMetArbol.limpiarListRecorrido()
-                            classMetArbol.limpiarCadenaG()
-                            classMetArbol.reporteRecorridoInOrden(classMetArbol.obtenerRaiz())
-                            classMetArbol.generarCadenaRecorrido()
-                            classMetArbol.generarImagenGraphiz()
-                            stdscr.clear()
-                            stdscr.refresh() 
-                            break
+                            try:
+                                classMetArbol.limpiarListRecorrido()
+                                classMetArbol.limpiarCadenaG()
+                                classMetArbol.reporteRecorridoInOrden(classMetArbol.obtenerRaiz())
+                                classMetArbol.generarCadenaRecorrido()
+                                classMetArbol.generarImagenGraphiz("InOrdenReport")
+                                stdscr.clear()
+                                stdscr.refresh() 
+                                break
+                            except:
+                                stdscr.addstr(20,35,"SE PRODUJO UN ERROR!")
+                                stdscr.refresh()
+                                stdscr.getch()
+                                stdscr.clear()
+                                stdscr.refresh() 
+                                break
                         elif a=="6":
-                            classMetArbol.limpiarListRecorrido()
-                            classMetArbol.limpiarCadenaG()
-                            classMetArbol.reporteRecorridoPreOrdenConsola(classMetArbol.obtenerRaiz())
-                            micad=classMetArbol.generarCadenaRecorridoConsola()
-                            stdscr.addstr(16,0,str(micad))
-                            stdscr.getch() 
-                            stdscr.clear()
-                            stdscr.refresh() 
-                            break
+                            try:
+                                classMetArbol.limpiarListRecorrido()
+                                classMetArbol.limpiarCadenaG()
+                                classMetArbol.reporteRecorridoPreOrdenConsola(classMetArbol.obtenerRaiz())
+                                micad=classMetArbol.generarCadenaRecorridoConsola()
+                                stdscr.addstr(16,0,str(micad))
+                                stdscr.getch() 
+                                stdscr.clear()
+                                stdscr.refresh() 
+                                break
+                            except:
+                                stdscr.addstr(20,35,"SE PRODUJO UN ERROR!")
+                                stdscr.refresh()
+                                stdscr.getch()
+                                stdscr.clear()
+                                stdscr.refresh() 
+                                break
                         elif a=="7":
-                            classMetArbol.limpiarListRecorrido()
-                            classMetArbol.limpiarCadenaG()
-                            classMetArbol.reporteRecorridoPosOrdenConsola(classMetArbol.obtenerRaiz())
-                            micad=classMetArbol.generarCadenaRecorridoConsola()
-                            stdscr.addstr(16,0,str(micad))
-                            stdscr.getch() 
-                            stdscr.clear()
-                            stdscr.refresh()                             
-                            break 
+                            try:
+                                classMetArbol.limpiarListRecorrido()
+                                classMetArbol.limpiarCadenaG()
+                                classMetArbol.reporteRecorridoPosOrdenConsola(classMetArbol.obtenerRaiz())
+                                micad=classMetArbol.generarCadenaRecorridoConsola()
+                                stdscr.addstr(16,0,str(micad))
+                                stdscr.getch() 
+                                stdscr.clear()
+                                stdscr.refresh()                             
+                                break 
+                            except:
+                                stdscr.addstr(20,35,"SE PRODUJO UN ERROR!")
+                                stdscr.refresh()
+                                stdscr.getch()
+                                stdscr.clear()
+                                stdscr.refresh() 
+                                break
                         elif a=="8":
-                            classMetArbol.limpiarListRecorrido()
-                            classMetArbol.limpiarCadenaG()
-                            classMetArbol.reporteRecorridoInOrdenConsola(classMetArbol.obtenerRaiz())
-                            micad=classMetArbol.generarCadenaRecorridoConsola()
-                            stdscr.addstr(16,0,str(micad))
-                            stdscr.getch() 
-                            stdscr.clear()
-                            stdscr.refresh() 
-                            break 
+                            try:
+                                classMetArbol.limpiarListRecorrido()
+                                classMetArbol.limpiarCadenaG()
+                                classMetArbol.reporteRecorridoInOrdenConsola(classMetArbol.obtenerRaiz())
+                                micad=classMetArbol.generarCadenaRecorridoConsola()
+                                stdscr.addstr(16,0,str(micad))
+                                stdscr.getch() 
+                                stdscr.clear()
+                                stdscr.refresh() 
+                                break
+                            except:
+                                stdscr.addstr(20,35,"SE PRODUJO UN ERROR!")
+                                stdscr.refresh()
+                                stdscr.getch()
+                                stdscr.clear()
+                                stdscr.refresh() 
+                                break 
                         else:
                             stdscr.addstr(22,52,"OPCION INCORRECTA!")
                             stdscr.getch()  
@@ -919,15 +987,12 @@ def menu_Historial(stdscr): #INICIA LAS PROPIEDADES BASICAS
             stdscr.refresh()
             curses.wrapper(menu_principal)
         elif (tecla==curses.KEY_ENTER) or tecla in [10,13]:
-            classMetArbol.limpiarCadenaG()
-            classMetArbol.limpiarRaiz()
-            nuevar=listaDobleBloques.getDataDeNodo(index)
-            arb=classIngreLista.ingresarEnListParaContruccionArbolBinario(nuevar) 
-            classMetArbol.construirArbolAVLdesdeArbolBinario(arb)
-            #classMetArbol.setRaiz(nuevar)
+            stdscr.clear()
+            stdscr.refresh()
+            curses.wrapper(menu_principal)
         if( index < 0): # EN CASO DE QUE EL INDICE SE VUELVA NEGAVITO LO DEJAMOS EN 0
-            index = listaDobleBloques.tamanio()-1
-        if( index >= listaDobleBloques.tamanio()): # EN CASO QUE EL INDICE SE VUELVA MAYOR AL SIZE DEL ARREGLO...
+            index = listHistorial.tamanio()-1
+        if( index >= listHistorial.tamanio()): # EN CASO QUE EL INDICE SE VUELVA MAYOR AL SIZE DEL ARREGLO...
             index = 0 # ... LO LIMITAMOS AL ULTIMO INDICE VALIDO
         pintar_menu_Historial(stdscr, index) # MANDAMOS A REPINTAR LA PANTALLA
 
@@ -951,7 +1016,6 @@ def pintar_menu_Historial(stdsrc, index):
     x = int((ancho/2)-(len(listHistorial.obtenerHist(index))/2))
     stdsrc.addstr(y,x, listHistorial.obtenerHist(index), curses.color_pair(2)) # HAGREGA UNA CADENA  LA PANTALLA EN COORDENADAS Y, X Y UN ATRIBUTO EN ESTE CASO ES LA PAREJA DE COLORES
     stdsrc.refresh()
-
 
 def llegadaMensaje():
     fullscreen = curses.initscr() 
