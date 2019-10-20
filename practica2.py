@@ -12,7 +12,7 @@ import threading
 
 from curses import KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN, textpad
 
-menu=['Insertar Bloque','Seleccionar Bloque','Reportes','Salir']
+menu=['Insertar Bloque','Seleccionar Bloque','Reportes','Historial','Salir']
 
 variableJsonEnviar=['vacio']
 listIngresarBloque=['vacio','vacio','vacio','vacio','vacio','vacio']
@@ -148,6 +148,48 @@ class dobleBloques():
                 print(cad,end=" ")
                 temp=temp.siguiente
 
+""" ------------------------------------------------------- COLA HISTORIAL --------------------------------------------------------------------"""
+class nodoHistorial():
+    def __init__(self, msjHistorial):                  
+        self.siguiente = None        
+        self.msjHistorial = msjHistorial 
+
+class colaHistorial():
+    def __init__(self):
+        self.primero=None
+        self.ultimo=None
+        self.size=0
+
+    def estaVacia(self):
+        return self.primero is None
+
+    def insertarFinal(self, msjHistorial):
+        nuevo=nodoHistorial(msjHistorial)
+        if self.estaVacia():
+            self.primero=nuevo
+            self.ultimo=nuevo
+        else:
+            self.ultimo.siguiente=nuevo
+            self.ultimo=nuevo
+        self.size=self.size+1
+
+    def obtenerHist(self, index):
+        actual=self.primero
+        for i in range(index):
+            actual=actual.siguiente
+        return actual.msjHistorial
+
+    def eliminar(self):
+        aux=self.primero.siguiente
+        self.primero.siguiente=None
+        self.primero=aux
+        self.size=self.size-1
+    
+    def vaciar(self):
+        self.primero=None
+        self.ultimo=None
+        self.size=0
+     
 """ ------------------------------------------------------------ ARBOL AVL -------------------------------------------------------------------"""
 class nodoArbolAVL():
     def __init__(self,nombre, carnet):
@@ -525,6 +567,7 @@ class ingresarEnLista:
 listaDobleBloques= dobleBloques()
 classMetArbol=miArbolAVL()
 classIngreLista=ingresarEnLista()
+listHistorial=colaHistorial()
 
 def generarHash(cadenah):
     hash = hashlib.sha256()
@@ -592,6 +635,7 @@ def validarQueBlockChainEsteBueno(cadenaBC):
     mihashg=generarHash(cadenaHash)
 
     #se compueba si el hash esta bueno
+    hashBueno='false'
     if hashj==mihashg:
         #ingreso datos a lista ya creada, es espera a que el servidor retorne true para luego agregarla a lista doble enlazada
         #listaDobleBloques.insertarFinal(index,fechayhora,clasee,dataa, hashant,miHash)
@@ -601,13 +645,11 @@ def validarQueBlockChainEsteBueno(cadenaBC):
         listIngresarBloque[3]=str(dataj)
         listIngresarBloque[4]=str(prevhash)
         listIngresarBloque[5]=str(hashj) 
-        return True
+        hashBueno='true'
         #print("\nBLOCK BUENO\n")
-    else:
-        return False
-        #print("\nBLOCK MALO\n")
     
-
+    return hashBueno
+  
 """ ----------------------------------------------------PARA EL MENU PRINCIPAL ---------------------------------------------------------------"""
 def print_menu(stdscr, selected_row_idx):
     h, w= stdscr.getmaxyx()
@@ -669,20 +711,20 @@ def menu_principal(stdscr):
                         stdscr.addstr(2,2,"Ingrese nombre de archivo.csv y luego presione ENTER: ")
                         stdscr.addstr(4,2,format(a))
                     elif tecla==10:#enter   
-                    #try:                   
-                        archivoBloque(str(a))
-                        stdscr.addstr(20,40,"BLOQUE CARGADO CORRECTAMENTE!")
-                        stdscr.getch()
-                        stdscr.clear()
-                        stdscr.refresh()                            
-                        break
-                    '''except:
-                        stdscr.addstr(20,35,"EL NOMBRE DEL ARCHIVO NO SE ENCONTRO!")
-                        stdscr.refresh()
-                        stdscr.getch()
-                        stdscr.clear()
-                        stdscr.refresh() 
-                        break  '''
+                        try:                   
+                            archivoBloque(str(a))
+                            stdscr.addstr(20,40,"BLOQUE CARGADO CORRECTAMENTE!")
+                            stdscr.getch()
+                            stdscr.clear()
+                            stdscr.refresh()                            
+                            break
+                        except:
+                            stdscr.addstr(20,35,"EL NOMBRE DEL ARCHIVO NO SE ENCONTRO!")
+                            stdscr.refresh()
+                            stdscr.getch()
+                            stdscr.clear()
+                            stdscr.refresh() 
+                            break  
             elif indice_fila_actual==1:   
                 if listaDobleBloques.estaVacia():
                     stdscr.addstr(11,32,"NO HAY BLOQUES!")
@@ -790,9 +832,17 @@ def menu_principal(stdscr):
                             stdscr.clear()
                             stdscr.refresh()
                             break 
-
+            elif indice_fila_actual==3:
+                if listaDobleBloques.estaVacia():
+                    stdscr.addstr(11,32,"NO HAY HISTORIAL!")
+                    stdscr.getch()  
+                    stdscr.clear()
+                    stdscr.refresh() 
+                else:    
+                   curses.wrapper(menu_Historial) 
             elif indice_fila_actual==len(menu)-1:
-                sys.exit()
+                hiloCom.stop()
+                sys.exit()                
                 '''llegadaMensaje()
                 time.sleep(1)
                 stdscr.clear()
@@ -852,6 +902,57 @@ def pintar_menu(stdsrc, index):
     stdsrc.addstr(y,x, listaDobleBloques.obtenerCadenaParaCarrusel(index), curses.color_pair(2)) # HAGREGA UNA CADENA  LA PANTALLA EN COORDENADAS Y, X Y UN ATRIBUTO EN ESTE CASO ES LA PAREJA DE COLORES
     stdsrc.refresh()
 
+""" ------------------------------------------------------PARA MOSTRAR HISTORIAL --------------------------------------------------------------"""
+
+def menu_Historial(stdscr): #INICIA LAS PROPIEDADES BASICAS
+    curses.curs_set(0) # SETEA EL CURSOR EN LA POSICION 0
+    index = 0
+    pintar_menu_Historial(stdscr, 0) # VA A INICAR EN EL INDICE 0
+    while True:
+        tecla = stdscr.getch() # OBTENEMOS EL CARACTER DEL TECLADO
+        if(tecla == curses.KEY_RIGHT): # VERIFICAMOS SI EL FLECHA A LA DERECHA
+            index = index + 1
+        elif (tecla == curses.KEY_LEFT ): # VERIFICAMOS SI ES FLECHA A LA IZQUIERDA
+            index = index - 1
+        elif (tecla == 27): # SI ES LA TECLA DE SCAPE.... 
+            stdscr.clear()
+            stdscr.refresh()
+            curses.wrapper(menu_principal)
+        elif (tecla==curses.KEY_ENTER) or tecla in [10,13]:
+            classMetArbol.limpiarCadenaG()
+            classMetArbol.limpiarRaiz()
+            nuevar=listaDobleBloques.getDataDeNodo(index)
+            arb=classIngreLista.ingresarEnListParaContruccionArbolBinario(nuevar) 
+            classMetArbol.construirArbolAVLdesdeArbolBinario(arb)
+            #classMetArbol.setRaiz(nuevar)
+        if( index < 0): # EN CASO DE QUE EL INDICE SE VUELVA NEGAVITO LO DEJAMOS EN 0
+            index = listaDobleBloques.tamanio()-1
+        if( index >= listaDobleBloques.tamanio()): # EN CASO QUE EL INDICE SE VUELVA MAYOR AL SIZE DEL ARREGLO...
+            index = 0 # ... LO LIMITAMOS AL ULTIMO INDICE VALIDO
+        pintar_menu_Historial(stdscr, index) # MANDAMOS A REPINTAR LA PANTALLA
+
+def pinter_ventana_Historial(stdscr):
+    # -----------------------------------------------------------
+    # PINTAMOS EL MARCO DEL MENU
+    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE) # COLOR DEL MARCO
+    stdscr.attron(curses.color_pair(1)) # PERMITE HABILITAR UN ATRIBUTO ESPECIFICO
+    stdscr.box("|", "-") ## PINTA EL MARCO
+    stdscr.attroff(curses.color_pair(1)) # DESHABILITA EL ATRIBUTO ESPECIICO
+    stdscr.refresh()
+    # -----------------------------------------------------------
+
+def pintar_menu_Historial(stdsrc, index):
+    # -----------------------------------------------------------
+    stdsrc.clear() # LIMPIA LA CONSOLA
+    pinter_ventana_Historial(stdsrc) # MANDA A PINTAR EL MARCO
+    altura, ancho = stdsrc.getmaxyx() # OBTIENE LA ALTURA Y ANCHO DE LA PANTALLA
+    curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLUE) # COLOR DE LAS OPCIONES, INIICIALIZA UNA PAREJA DE COLORES EL COLOR DE LETRA Y COLOR DE FONDO RESPECTIVAMENTE
+    y = int(altura/2) 
+    x = int((ancho/2)-(len(listHistorial.obtenerHist(index))/2))
+    stdsrc.addstr(y,x, listHistorial.obtenerHist(index), curses.color_pair(2)) # HAGREGA UNA CADENA  LA PANTALLA EN COORDENADAS Y, X Y UN ATRIBUTO EN ESTE CASO ES LA PAREJA DE COLORES
+    stdsrc.refresh()
+
+
 def llegadaMensaje():
     fullscreen = curses.initscr() 
     # Dibuja un borde al rededor de los límites del window
@@ -908,14 +1009,14 @@ def archivoBloque(ruta):
         dataa=dataa.replace(" ","")
         dataa=dataa.replace("\'","\"")
         cadenaParaHash=str(index) + str(fechayhora) +str(clasee)+str(dataa)+str(hashant)
-        miHash=generarHash(cadenaParaHash)
-        variableJsonEnviar[0]=generarCadenaJSON(index,fechayhora,clasee,dataa,hashant,miHash)
+        miHash=generarHash(cadenaParaHash)        
         listIngresarBloque[0]=str(index)
         listIngresarBloque[1]=str(fechayhora)
         listIngresarBloque[2]=str(clasee)
         listIngresarBloque[3]=str(dataa)
         listIngresarBloque[4]=str(hashant)
         listIngresarBloque[5]=str(miHash) 
+        variableJsonEnviar[0]=generarCadenaJSON(index,fechayhora,clasee,dataa,hashant,miHash)
         #validarQueBlockChainEsteBueno(variableJsonEnviar[0])
         #listaDobleBloques.insertarFinal(index,fechayhora,clasee,dataa, hashant,miHash)
     else:
@@ -929,20 +1030,26 @@ def archivoBloque(ruta):
         dataa=dataa.replace("\'","\"")
         cadenaParaHash=str(index)+str(fechayhora)+str(clasee)+str(dataa)+str(hashant)
         miHash=generarHash(cadenaParaHash)
+        listIngresarBloque[0]=str(index)
+        listIngresarBloque[1]=str(fechayhora)
+        listIngresarBloque[2]=str(clasee)
+        listIngresarBloque[3]=str(dataa)
+        listIngresarBloque[4]=str(hashant)
+        listIngresarBloque[5]=str(miHash)
         variableJsonEnviar[0]=generarCadenaJSON(index,fechayhora,clasee,dataa,hashant,miHash)
         #validarQueBlockChainEsteBueno(variableJsonEnviar[0])
         #listaDobleBloques.insertarFinal(index,fechayhora,clasee,dataa,hashant,miHash)
-   
-def comunicacionConServerSiempreEscuchando():
 
+def comunicacionConServerSiempreEscuchando():
+       
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     if len(sys.argv) != 3:
         print ("Correct usage: script, IP address, port number")
         exit()
     IP_address = str(sys.argv[1])
     Port = int(sys.argv[2])
-    server.connect((IP_address, Port))
-    aja='true'
+    server.connect((IP_address, Port))   
+
     while True:
 
         # mantiene una lista de posibles flujos de entrada
@@ -955,8 +1062,12 @@ def comunicacionConServerSiempreEscuchando():
                 message = socks.recv(2048)
                 msj=message.decode('utf-8')
                 msj=str(msj)
-                print(msj)
-                if msj=='true': #guardara en lista
+                if msj=='true' and listIngresarBloque[0]!='vacio': #guardara en lista
+                    #se ingresa al historial
+                    fecha=time.strftime("%d-%m-%y") 
+                    hora=time.strftime("%H:%M:%S")
+                    cadinsert=fecha+"-::"+hora+"  TRUE"
+                    listHistorial.insertarFinal(str(cadinsert))
                     listaDobleBloques.insertarFinal(listIngresarBloque[0],listIngresarBloque[1],listIngresarBloque[2],listIngresarBloque[3], listIngresarBloque[4],listIngresarBloque[5])
                     #reseteo en espera de otro bloque
                     listIngresarBloque[0]='vacio'
@@ -966,10 +1077,28 @@ def comunicacionConServerSiempreEscuchando():
                     listIngresarBloque[4]='vacio'
                     listIngresarBloque[5]='vacio' 
                 elif msj=='false': #no guardara en lista
-                    pass
+                    #se ingresa al historial
+                    fecha=time.strftime("%d-%m-%y") 
+                    hora=time.strftime("%H:%M:%S")
+                    cadinsert=fecha+"-::"+hora+"  FALSE"
+                    listHistorial.insertarFinal(str(cadinsert))
+                    #reseteo en espera de otro bloque
+                    listIngresarBloque[0]='vacio'
+                    listIngresarBloque[1]='vacio'
+                    listIngresarBloque[2]='vacio'
+                    listIngresarBloque[3]='vacio'
+                    listIngresarBloque[4]='vacio'
+                    listIngresarBloque[5]='vacio'
                 else: #sera un blockchain el que recibe
-                    print(listIngresarBloque)
-                    '''if validarQueBlockChainEsteBueno(msj)==False: #si la comprobacion esta mala, enviara msj 'false'
+                    #se ingresa al historial
+                    fecha=time.strftime("%d-%m-%y") 
+                    hora=time.strftime("%H:%M:%S")
+                    cadinsert=fecha+"-::"+hora+"  BLOCKCHAIN"
+                    listHistorial.insertarFinal(str(cadinsert))
+                    #se valida que el blockchain este bueno
+                    resp=validarQueBlockChainEsteBueno(msj)
+                    #se envia msj segun sea la respuesta
+                    if resp == 'false': 
                         nNessage = 'false'
                         server.sendall(nNessage.encode('utf-8'))
                         sys.stdout.write(nNessage)
@@ -978,20 +1107,14 @@ def comunicacionConServerSiempreEscuchando():
                         nNessage = 'true'
                         server.sendall(nNessage.encode('utf-8'))
                         sys.stdout.write(nNessage)
-                        sys.stdout.flush()'''
-            else:
-                if variableJsonEnviar[0]!='vacio': #para enviar mensaje al servidor (se envia el blockchain)
+                        sys.stdout.flush()
+            else: #para enviar mensaje al servidor (se envia el blockchain)
+                if variableJsonEnviar[0]!='vacio': 
                     message = variableJsonEnviar[0]
                     server.sendall(message.encode('utf-8'))
                     sys.stdout.write(message)
                     sys.stdout.flush()
-                    variableJsonEnviar[0]='vacio'
-                elif aja=='true':
-                    message = 'true'
-                    server.sendall(message.encode('utf-8'))
-                    sys.stdout.write(message)
-                    sys.stdout.flush()
-                    aja='vacio'
+                    variableJsonEnviar[0]='vacio'                    
 
     server.close()
 
