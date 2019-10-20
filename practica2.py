@@ -1115,86 +1115,110 @@ def comunicacionConServerSiempreEscuchando():
     server.connect((IP_address, Port))   
 
     while True:
+        try:
+            # mantiene una lista de posibles flujos de entrada
+            read_sockets = select.select([server], [], [], 1)[0]
+            import msvcrt
+            if msvcrt.kbhit(): read_sockets.append(sys.stdin)
 
-        # mantiene una lista de posibles flujos de entrada
-        read_sockets = select.select([server], [], [], 1)[0]
-        import msvcrt
-        if msvcrt.kbhit(): read_sockets.append(sys.stdin)
+            for socks in read_sockets:
+                if socks == server: #si recibe un mensaje
+                    message = socks.recv(2048)
+                    msj=message.decode('utf-8')
+                    msj=str(msj)
+                    if msj=='true' and listIngresarBloque[0]!='vacio': #guardara en lista
+                        try:
+                            #se ingresa al historial
+                            fecha=time.strftime("%d-%m-%y") 
+                            hora=time.strftime("%H:%M:%S")
+                            cadinsert=fecha+"-::"+hora+"  TRUE"
+                            listHistorial.insertarFinal(str(cadinsert))
+                            listaDobleBloques.insertarFinal(listIngresarBloque[0],listIngresarBloque[1],listIngresarBloque[2],listIngresarBloque[3], listIngresarBloque[4],listIngresarBloque[5])
+                            #reseteo en espera de otro bloque
+                            listIngresarBloque[0]='vacio'
+                            listIngresarBloque[1]='vacio'
+                            listIngresarBloque[2]='vacio'
+                            listIngresarBloque[3]='vacio'
+                            listIngresarBloque[4]='vacio'
+                            listIngresarBloque[5]='vacio' 
+                        except:
+                            fecha=time.strftime("%d-%m-%y") 
+                            hora=time.strftime("%H:%M:%S")
+                            cadinsert=fecha+"-::"+hora+"  ERROR AL LEER TRUE"
+                            listHistorial.insertarFinal(str(cadinsert))
+                    elif msj=='false': #no guardara en lista
+                        try:
+                            #se ingresa al historial
+                            fecha=time.strftime("%d-%m-%y") 
+                            hora=time.strftime("%H:%M:%S")
+                            cadinsert=fecha+"-::"+hora+"  FALSE"
+                            listHistorial.insertarFinal(str(cadinsert))
+                            #reseteo en espera de otro bloque
+                            listIngresarBloque[0]='vacio'
+                            listIngresarBloque[1]='vacio'
+                            listIngresarBloque[2]='vacio'
+                            listIngresarBloque[3]='vacio'
+                            listIngresarBloque[4]='vacio'
+                            listIngresarBloque[5]='vacio'
+                        except:
+                            fecha=time.strftime("%d-%m-%y") 
+                            hora=time.strftime("%H:%M:%S")
+                            cadinsert=fecha+"-::"+hora+"  ERROR AL LEER FALSE"
+                            listHistorial.insertarFinal(str(cadinsert))
+                    else: #sera un blockchain el que recibe
+                        try:
+                            #se ingresa al historial
+                            fecha=time.strftime("%d-%m-%y") 
+                            hora=time.strftime("%H:%M:%S")
+                            cadinsert=fecha+"-::"+hora+"  BLOCKCHAIN"
+                            listHistorial.insertarFinal(str(cadinsert))
+                            #se valida que el blockchain este bueno
+                            resp=validarQueBlockChainEsteBueno(msj)
+                            #se envia msj segun sea la respuesta
+                            if resp == 'false': 
+                                nNessage = 'false'
+                                server.sendall(nNessage.encode('utf-8'))
+                                sys.stdout.write(nNessage)
+                                sys.stdout.flush()
+                            else:
+                                nNessage = 'true'
+                                server.sendall(nNessage.encode('utf-8'))
+                                sys.stdout.write(nNessage)
+                                sys.stdout.flush()
+                        except:
+                            #se ingresa al historial el error
+                            fecha=time.strftime("%d-%m-%y") 
+                            hora=time.strftime("%H:%M:%S")
+                            cadinsert=fecha+"-::"+hora+"  ERROR AL LEER BLOCKCHAIN"
+                            listHistorial.insertarFinal(str(cadinsert))
+                            nNessage = 'false'
+                            server.sendall(nNessage.encode('utf-8'))
+                            sys.stdout.write(nNessage)
+                            sys.stdout.flush()
 
-        for socks in read_sockets:
-            if socks == server: #si recibe un mensaje
-                message = socks.recv(2048)
-                msj=message.decode('utf-8')
-                msj=str(msj)
-                if msj=='true' and listIngresarBloque[0]!='vacio': #guardara en lista
-                    #se ingresa al historial
-                    fecha=time.strftime("%d-%m-%y") 
-                    hora=time.strftime("%H:%M:%S")
-                    cadinsert=fecha+"-::"+hora+"  TRUE"
-                    listHistorial.insertarFinal(str(cadinsert))
-                    listaDobleBloques.insertarFinal(listIngresarBloque[0],listIngresarBloque[1],listIngresarBloque[2],listIngresarBloque[3], listIngresarBloque[4],listIngresarBloque[5])
-                    #reseteo en espera de otro bloque
-                    listIngresarBloque[0]='vacio'
-                    listIngresarBloque[1]='vacio'
-                    listIngresarBloque[2]='vacio'
-                    listIngresarBloque[3]='vacio'
-                    listIngresarBloque[4]='vacio'
-                    listIngresarBloque[5]='vacio' 
-                elif msj=='false': #no guardara en lista
-                    #se ingresa al historial
-                    fecha=time.strftime("%d-%m-%y") 
-                    hora=time.strftime("%H:%M:%S")
-                    cadinsert=fecha+"-::"+hora+"  FALSE"
-                    listHistorial.insertarFinal(str(cadinsert))
-                    #reseteo en espera de otro bloque
-                    listIngresarBloque[0]='vacio'
-                    listIngresarBloque[1]='vacio'
-                    listIngresarBloque[2]='vacio'
-                    listIngresarBloque[3]='vacio'
-                    listIngresarBloque[4]='vacio'
-                    listIngresarBloque[5]='vacio'
-                else: #sera un blockchain el que recibe
-                    #se ingresa al historial
-                    fecha=time.strftime("%d-%m-%y") 
-                    hora=time.strftime("%H:%M:%S")
-                    cadinsert=fecha+"-::"+hora+"  BLOCKCHAIN"
-                    listHistorial.insertarFinal(str(cadinsert))
-                    #se valida que el blockchain este bueno
-                    resp=validarQueBlockChainEsteBueno(msj)
-                    #se envia msj segun sea la respuesta
-                    if resp == 'false': 
-                        nNessage = 'false'
-                        server.sendall(nNessage.encode('utf-8'))
-                        sys.stdout.write(nNessage)
-                        sys.stdout.flush()
-                    else:
-                        nNessage = 'true'
-                        server.sendall(nNessage.encode('utf-8'))
-                        sys.stdout.write(nNessage)
-                        sys.stdout.flush()
-            else: #para enviar mensaje al servidor (se envia el blockchain)
-                if variableJsonEnviar[0]!='vacio': 
-                    message = variableJsonEnviar[0]
-                    server.sendall(message.encode('utf-8'))
-                    sys.stdout.write(message)
-                    sys.stdout.flush()
-                    variableJsonEnviar[0]='vacio'                    
+                else: #para enviar mensaje al servidor (se envia el blockchain)
+                    if variableJsonEnviar[0]!='vacio': 
+                        try:
+                            message = variableJsonEnviar[0]
+                            server.sendall(message.encode('utf-8'))
+                            sys.stdout.write(message)
+                            sys.stdout.flush()
+                            variableJsonEnviar[0]='vacio' 
+                        except:
+                            fecha=time.strftime("%d-%m-%y") 
+                            hora=time.strftime("%H:%M:%S")
+                            cadinsert=fecha+"-::"+hora+"  ERROR AL ENVIAR BLOCKCHAIN"
+                            listHistorial.insertarFinal(str(cadinsert))
+        except:
+            fecha=time.strftime("%d-%m-%y") 
+            hora=time.strftime("%H:%M:%S")
+            cadinsert=fecha+"-::"+hora+"  ERROR AL LEER MSJ ENTRANTE"
+            listHistorial.insertarFinal(str(cadinsert))
+            continue                   
 
     server.close()
 
-            
-'''classMetArbol.limpiarCadenaG()
-classMetArbol.limpiarRaiz()            
-classMetArbol.insertar("G1",1)
-classMetArbol.insertar("G2",5)
-classMetArbol.insertar("G3",6)
-classMetArbol.insertar("G4",10)
-classMetArbol.insertar("G5",13)
-classMetArbol.insertar("G6",16)
-classMetArbol.insertar("G7",17)
-classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
-classMetArbol.generarImagenGraphiz()
-'''
+
 #validarQueBlockChainEsteBueno("na")
 hiloCom=threading.Thread(target=comunicacionConServerSiempreEscuchando)
 hiloCom.start()
