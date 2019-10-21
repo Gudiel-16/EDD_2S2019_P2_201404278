@@ -937,11 +937,16 @@ def menu_bloques(stdscr): #INICIA LAS PROPIEDADES BASICAS
             stdscr.refresh()
             curses.wrapper(menu_principal)
         elif (tecla==curses.KEY_ENTER) or tecla in [10,13]:
-            classMetArbol.limpiarCadenaG()
-            classMetArbol.limpiarRaiz()
-            nuevar=listaDobleBloques.getDataDeNodo(index)
-            arb=classIngreLista.ingresarEnListParaContruccionArbolBinario(nuevar) 
-            classMetArbol.construirArbolAVLdesdeArbolBinario(arb)
+            try:
+                classMetArbol.limpiarCadenaG()
+                classMetArbol.limpiarRaiz()
+                nuevar=listaDobleBloques.getDataDeNodo(index)
+                arb=classIngreLista.ingresarEnListParaContruccionArbolBinario(nuevar) 
+                classMetArbol.construirArbolAVLdesdeArbolBinario(arb)
+            except:
+                stdscr.addstr(20,35,"OCURRIO UN ERROR!")
+                stdscr.refresh()
+                stdscr.getch()
             #classMetArbol.setRaiz(nuevar)
         if( index < 0): # EN CASO DE QUE EL INDICE SE VUELVA NEGAVITO LO DEJAMOS EN 0
             index = listaDobleBloques.tamanio()-1
@@ -1050,11 +1055,11 @@ def archivoBloque(ruta):
                 #us="{0}".format(row[0]) #fila 0 de archivo .csv
                 dataa="{0}".format(row[1]) #fila 1 de archivo .csv
                 #se crea el arbol binario
-                arb=classIngreLista.ingresarEnListParaContruccionArbolBinario(dataa)                 
+                #arb=classIngreLista.ingresarEnListParaContruccionArbolBinario(dataa)                 
                 #se crea el arbol AVL
-                classMetArbol.limpiarCadenaG()
-                classMetArbol.limpiarRaiz()           
-                classMetArbol.construirArbolAVLdesdeArbolBinario(arb)  
+                #classMetArbol.limpiarCadenaG()
+                #classMetArbol.limpiarRaiz()           
+                #classMetArbol.construirArbolAVLdesdeArbolBinario(arb)  
                 #classMetArbol.reporteGraphvizArbol(classMetArbol.obtenerRaiz())
                 #classMetArbol.generarImagenGraphiz()
 
